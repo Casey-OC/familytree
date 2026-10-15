@@ -155,11 +155,14 @@ export function TreeView() {
   };
 
   // Only draw cards that are on screen (keeps big imported trees fast).
+  // A margin of one screen keeps nearby cards reachable with the Tab key.
+  const mx = size.w / tz.k;
+  const my = size.h / tz.k;
   const vis = {
-    x0: -tz.x / tz.k - lay.CW,
-    y0: -tz.y / tz.k - lay.CH,
-    x1: (size.w - tz.x) / tz.k + 20,
-    y1: (size.h - tz.y) / tz.k + 20,
+    x0: -tz.x / tz.k - lay.CW - mx,
+    y0: -tz.y / tz.k - lay.CH - my,
+    x1: (size.w - tz.x) / tz.k + mx,
+    y1: (size.h - tz.y) / tz.k + my,
   };
   const shown = lay.nodes.filter((n) => n.x >= vis.x0 && n.x <= vis.x1 && n.y >= vis.y0 && n.y <= vis.y1);
 
@@ -184,6 +187,7 @@ export function TreeView() {
   return (
     <div className="view tree-view">
       <div className="toolbar">
+        <h1 className="sr-only">Family tree</h1>
         <Seg
           label="Tree view"
           value={view}
@@ -248,6 +252,24 @@ export function TreeView() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         style={{ touchAction: 'none' }}
+        tabIndex={0}
+        role="application"
+        aria-label="Family tree. Use the arrow keys to move around, plus and minus to zoom, and Tab to move between people."
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget && !['+', '=', '-', '_'].includes(e.key)) return;
+          const step = 60;
+          const moves: Record<string, [number, number]> = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+          if (moves[e.key]) {
+            e.preventDefault();
+            setUi({ tz: { ...tz, x: tz.x + moves[e.key][0], y: tz.y + moves[e.key][1] }, smooth: true });
+          } else if (e.key === '+' || e.key === '=') {
+            e.preventDefault();
+            zoomBy(1.2);
+          } else if (e.key === '-' || e.key === '_') {
+            e.preventDefault();
+            zoomBy(1 / 1.2);
+          }
+        }}
       >
         <div
           className={'tree-layer' + (smooth ? ' smooth' : '')}
@@ -279,6 +301,12 @@ export function TreeView() {
                   e.preventDefault();
                   e.stopPropagation();
                   openCtx(id, e, false);
+                }}
+                onFocus={() => {
+                  // Keyboard users: bring the focused card into view.
+                  const sx = n.x * tz.k + tz.x;
+                  const sy = n.y * tz.k + tz.y;
+                  if (sx < 0 || sy < 0 || sx + lay.CW * tz.k > size.w || sy + lay.CH * tz.k > size.h) centreTo(id);
                 }}
               >
                 <button

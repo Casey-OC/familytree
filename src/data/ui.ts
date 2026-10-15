@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
 export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings';
-export type Screen = 'loading' | 'first' | 'empty' | 'import' | 'app';
+export type Screen = 'loading' | 'locked' | 'first' | 'empty' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
 export type PersonTab = 'facts' | 'relationships' | 'media' | 'notes' | 'sources' | 'research';
 
@@ -35,7 +35,12 @@ export type Modal =
   | { kind: 'confirm'; title: string; body: string; action: string; danger?: boolean; onConfirm: () => void | Promise<void> }
   | { kind: 'renameTree'; name: string }
   | { kind: 'shortcuts' }
-  | { kind: 'comingSoon'; title: string; body: string };
+  | { kind: 'comingSoon'; title: string; body: string }
+  | { kind: 'setPassword' }
+  | { kind: 'changePassword' }
+  | { kind: 'removePassword' }
+  | { kind: 'encrypt'; on: boolean }
+  | { kind: 'geocodeAll' };
 
 export interface UiState {
   screen: Screen;

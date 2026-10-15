@@ -10,6 +10,7 @@ import { Icon, Seg, Switch, Tabs, fmtBytes } from '../../components/ui';
 import { GedcomImport } from './GedcomImport';
 import { SCHEDULES } from './backups';
 import { ThemeGrid } from '../Modals';
+import { SecurityCard } from '../security/Security';
 
 export function Settings() {
   const stab = useUi((s) => s.stab);
@@ -94,7 +95,7 @@ function GedcomExport() {
       <div className="muted small">
         {out.people} people · {out.families} families · {out.excluded} living people excluded · {out.lines.toLocaleString()} lines · GEDCOM 5.5.1, UTF-8
       </div>
-      <pre className="pre">{out.text.split('\n').slice(0, 40).join('\n') + '\n…'}</pre>
+      <pre className="pre" tabIndex={0} aria-label="Preview of the GEDCOM file">{out.text.split('\n').slice(0, 40).join('\n') + '\n…'}</pre>
       <button className="btn primary" onClick={save} style={{ alignSelf: 'flex-start' }}>
         <Icon name="download" sm />
         Export .ged
@@ -204,29 +205,9 @@ function BackupTab() {
         <p className="muted small" style={{ margin: 0 }}>
           The newest 20 backups are kept, including your photos and documents.
         </p>
+        <MapCacheRow />
       </section>
-      <section className="card">
-        <h2 className="h2" style={{ marginBottom: 8 }}>
-          Security
-        </h2>
-        <div className="toggle">
-          <span style={{ flex: 1 }}>
-            <span className="li-t">App password lock</span>
-            <span className="li-s">Ask for a password when the app opens · coming in Phase 2</span>
-          </span>
-          <Switch on={false} onToggle={() => {}} label="App password lock" disabled />
-        </div>
-        <div className="toggle">
-          <span style={{ flex: 1 }}>
-            <span className="li-t">Encrypt the tree file</span>
-            <span className="li-s">Protects living people’s details if this computer is lost · coming in Phase 2</span>
-          </span>
-          <Switch on={false} onToggle={() => {}} label="Encryption" disabled />
-        </div>
-        <button className="btn ghost" style={{ marginTop: 10 }} onClick={async () => toast('Your trees are saved in: ' + (await platform.revealDataFolder()))}>
-          Show where my trees are saved
-        </button>
-      </section>
+      <SecurityCard />
     </div>
   );
 }
@@ -309,5 +290,31 @@ function AppearanceTab() {
         </label>
       </section>
     </>
+  );
+}
+
+function MapCacheRow() {
+  const [size, setSize] = useState<number | null>(null);
+  useEffect(() => {
+    platform.mapCacheInfo().then(setSize).catch(() => setSize(null));
+  }, []);
+  if (!platform.isTauri()) return null;
+  return (
+    <div className="toggle">
+      <span style={{ flex: 1 }}>
+        <span className="li-t">Saved map areas</span>
+        <span className="li-s">{size === null ? 'Checking…' : fmtBytes(size) + ' kept so maps work offline (up to 400 MB)'}</span>
+      </span>
+      <button
+        className="btn sm"
+        onClick={async () => {
+          await platform.mapCacheClear();
+          setSize(0);
+          toast('Saved map areas cleared');
+        }}
+      >
+        Clear
+      </button>
+    </div>
   );
 }

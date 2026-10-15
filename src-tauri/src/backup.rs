@@ -10,7 +10,8 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use tauri::{AppHandle, State};
 
-use crate::db::{db_file, open_connection, DbState, OpenTree};
+use crate::crypto::{self, KeyState};
+use crate::db::{db_file, session_key, DbState, OpenTree};
 use crate::storage::{app_dir, tree_dir, valid_id};
 
 const KEEP: usize = 20;
@@ -74,6 +75,14 @@ pub fn list_in(dir: &Path) -> Vec<BackupInfo> {
     v
 }
 
+/// A consistent copy of an open database: encrypted trees stay encrypted.
+pub fn snapshot_with(conn: &rusqlite::Connection, dest: &Path, key: Option<&str>) -> Result<(), String> {
+    match key {
+        Some(k) => crypto::export_to(conn, dest, Some(k)),
+        None => snapshot(conn, dest),
+    }
+}
+
 pub fn snapshot(conn: &rusqlite::Connection, dest: &Path) -> Result<(), String> {
     if dest.exists() {
         std::fs::remove_file(dest).map_err(|e| e.to_string())?;
@@ -89,17 +98,18 @@ fn clean_reason(r: &str) -> String {
 }
 
 #[tauri::command]
-pub async fn backup_now(app: AppHandle, state: State<'_, DbState>, tree_id: String, reason: String) -> Result<BackupInfo, String> {
+pub async fn backup_now(app: AppHandle, state: State<'_, DbState>, keys: State<'_, KeyState>, tree_id: String, reason: String) -> Result<BackupInfo, String> {
+    let key = session_key(&keys);
     let dir = backup_dir(&app, &tree_id)?;
     let stamp = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
     let dest = dir.join(format!("{stamp}_{}.db", clean_reason(&reason)));
     {
         let guard = state.0.lock().map_err(|_| "Database lock poisoned".to_string())?;
         match guard.as_ref() {
-            Some(t) if t.id == tree_id => snapshot(&t.conn, &dest)?,
+            Some(t) if t.id == tree_id => snapshot_with(&t.conn, &dest, if t.encrypted { key.as_deref() } else { None })?,
             _ => {
-                let conn = open_connection(&db_file(&app, &tree_id)?)?;
-                snapshot(&conn, &dest)?;
+                let (conn, enc) = crypto::open_smart(&db_file(&app, &tree_id)?, key.as_deref())?;
+                snapshot_with(&conn, &dest, if enc { key.as_deref() } else { None })?;
             }
         }
     }
@@ -119,7 +129,8 @@ pub async fn backup_list(app: AppHandle, tree_id: String) -> Result<Vec<BackupIn
 
 /// Replaces the tree with a backup. A safety backup of the current state is made first.
 #[tauri::command]
-pub async fn backup_restore(app: AppHandle, state: State<'_, DbState>, tree_id: String, file: String) -> Result<(), String> {
+pub async fn backup_restore(app: AppHandle, state: State<'_, DbState>, keys: State<'_, KeyState>, tree_id: String, file: String) -> Result<(), String> {
+    let key = session_key(&keys);
     if file.contains('/') || file.contains('\\') || file.contains("..") || !file.ends_with(".db") {
         return Err("Not a backup file".into());
     }
@@ -135,8 +146,11 @@ pub async fn backup_restore(app: AppHandle, state: State<'_, DbState>, tree_id: 
         let stamp = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
         let safety = dir.join(format!("{stamp}_before-restore.db"));
         match guard.as_ref() {
-            Some(t) if t.id == tree_id => snapshot(&t.conn, &safety)?,
-            _ => snapshot(&open_connection(&target)?, &safety)?,
+            Some(t) if t.id == tree_id => snapshot_with(&t.conn, &safety, if t.encrypted { key.as_deref() } else { None })?,
+            _ => {
+                let (c, enc) = crypto::open_smart(&target, key.as_deref())?;
+                snapshot_with(&c, &safety, if enc { key.as_deref() } else { None })?;
+            }
         }
     }
     *guard = None;
@@ -145,8 +159,8 @@ pub async fn backup_restore(app: AppHandle, state: State<'_, DbState>, tree_id: 
     }
     std::fs::copy(&src, &target).map_err(|e| format!("Restore failed: {e}"))?;
     sync_media(&dir.join("media"), &tree_dir(&app, &tree_id)?.join("media"))?;
-    let conn = open_connection(&target)?;
-    *guard = Some(OpenTree { id: tree_id, conn });
+    let (conn, encrypted) = crypto::open_smart(&target, key.as_deref())?;
+    *guard = Some(OpenTree { id: tree_id, conn, encrypted });
     Ok(())
 }
 
@@ -155,10 +169,12 @@ pub async fn backup_restore(app: AppHandle, state: State<'_, DbState>, tree_id: 
 pub async fn backup_export(
     app: AppHandle,
     state: State<'_, DbState>,
+    keys: State<'_, KeyState>,
     tree_id: String,
     dest_dir: String,
     folder_name: String,
 ) -> Result<String, String> {
+    let key = session_key(&keys);
     let safe: String = folder_name
         .chars()
         .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' { c } else { '_' })
@@ -168,8 +184,11 @@ pub async fn backup_export(
     {
         let guard = state.0.lock().map_err(|_| "Database lock poisoned".to_string())?;
         match guard.as_ref() {
-            Some(t) if t.id == tree_id => snapshot(&t.conn, &out.join("tree.db"))?,
-            _ => snapshot(&open_connection(&db_file(&app, &tree_id)?)?, &out.join("tree.db"))?,
+            Some(t) if t.id == tree_id => snapshot_with(&t.conn, &out.join("tree.db"), if t.encrypted { key.as_deref() } else { None })?,
+            _ => {
+                let (c, enc) = crypto::open_smart(&db_file(&app, &tree_id)?, key.as_deref())?;
+                snapshot_with(&c, &out.join("tree.db"), if enc { key.as_deref() } else { None })?;
+            }
         }
     }
     sync_media(&tree_dir(&app, &tree_id)?.join("media"), &out.join("media"))?;
@@ -183,7 +202,7 @@ mod tests {
     #[test]
     fn snapshot_copies_data_and_lists_newest_first() {
         let dir = tempfile::tempdir().unwrap();
-        let conn = open_connection(&dir.path().join("tree.db")).unwrap();
+        let conn = crate::db::open_connection(&dir.path().join("tree.db")).unwrap();
         conn.execute_batch("CREATE TABLE t(x); INSERT INTO t VALUES (42);").unwrap();
         let b = dir.path().join("b");
         std::fs::create_dir_all(&b).unwrap();

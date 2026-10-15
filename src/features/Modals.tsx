@@ -7,6 +7,8 @@ import { treeApi } from '../lib/family';
 import { SOURCE_TYPES } from '../lib/types';
 import { ModalFrame, PlaceInput } from '../components/ui';
 import { THEMES } from '../lib/themes';
+import { GeocodeAllModal } from './map/Geocode';
+import { ChangePasswordModal, EncryptModal, RemovePasswordModal, SetPasswordModal } from './security/Security';
 
 export function Modals() {
   const modal = useUi((s) => s.modal);
@@ -31,6 +33,16 @@ export function Modals() {
       return <RenameModal m={modal} close={close} />;
     case 'shortcuts':
       return <ShortcutsModal close={close} />;
+    case 'setPassword':
+      return <SetPasswordModal close={close} />;
+    case 'changePassword':
+      return <ChangePasswordModal close={close} />;
+    case 'removePassword':
+      return <RemovePasswordModal close={close} />;
+    case 'encrypt':
+      return <EncryptModal on={modal.on} close={close} />;
+    case 'geocodeAll':
+      return <GeocodeAllModal close={close} />;
     case 'comingSoon':
       return (
         <ModalFrame label={modal.title} onClose={close}>

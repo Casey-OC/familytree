@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { useData, loadPrefs, openTree, setPrefs } from './data/store';
-import { setUi, toast, ui, useUi } from './data/ui';
+import { useData, loadPrefs, setPrefs } from './data/store';
+import { setUi, ui, useUi } from './data/ui';
+import { continueStartup, LockScreen } from './features/security/Security';
 import { closePanel, flushNotes, go } from './data/actions';
 import * as platform from './data/platform';
 import { FirstRun, EmptyTree, ImportStart } from './features/FirstRun';
@@ -20,18 +21,8 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const p = await loadPrefs();
-      const last = p.trees.find((t) => t.id === p.lastTree);
-      if (last) {
-        try {
-          await openTree(last.id);
-          setUi({ screen: 'app', section: 'home' });
-          return;
-        } catch (e) {
-          console.error(e);
-          toast('Couldn’t reopen your last tree: ' + String((e as Error)?.message || e));
-        }
-      }
-      setUi({ screen: 'first' });
+      if (p.lock) setUi({ screen: 'locked' });
+      else await continueStartup();
     })();
   }, []);
 
@@ -107,6 +98,7 @@ export default function App() {
           </div>
         </div>
       )}
+      {screen === 'locked' && <LockScreen />}
       {screen === 'first' && <FirstRun />}
       {screen === 'empty' && <EmptyTree />}
       {screen === 'import' && <ImportStart />}

@@ -9,6 +9,18 @@ import { treeApi } from '../../lib/family';
 import { dateLabel, factYear } from '../../lib/dates';
 import { Icon, Seg } from '../../components/ui';
 import { LAND, MED } from './land';
+import { DetailedMap, type MapMove, type MapPin } from './DetailedMap';
+import { isTauri } from '../../data/platform';
+import { setUi } from '../../data/ui';
+
+const KIND_KEY = 'familytree.mapKind';
+const savedKind = (): 'detailed' | 'simple' => {
+  try {
+    return (localStorage.getItem(KIND_KEY) as 'detailed' | 'simple') || (isTauri() ? 'detailed' : 'simple');
+  } catch {
+    return isTauri() ? 'detailed' : 'simple';
+  }
+};
 
 type Mode = 'all' | 'line' | 'person';
 type Cat = 'Birth' | 'Marriage' | 'Death' | 'Residence';
@@ -49,6 +61,17 @@ export function MapView() {
   const [playing, setPlaying] = useState(false);
   const [region, setRegion] = useState<'world' | 'uk' | 'aus' | 'fit'>('world');
   const [sel, setSel] = useState<string | null>(null);
+  const [kind, setKindState] = useState<'detailed' | 'simple'>(savedKind);
+  const [failNote, setFailNote] = useState('');
+  const setKind = (k: 'detailed' | 'simple') => {
+    setKindState(k);
+    setFailNote('');
+    try {
+      localStorage.setItem(KIND_KEY, k);
+    } catch {
+      /* remembered for this session only */
+    }
+  };
   const boxRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 700 });
 
@@ -175,6 +198,35 @@ export function MapView() {
     return { d, recent, head: `${ex},${ey} ${bx + nx},${by + ny} ${bx - nx},${by - ny}`, key: s.a.id + s.b.id };
   });
 
+  const detailedPins: MapPin[] = useMemo(
+    () =>
+      Object.keys(vm.by).map((id) => {
+        const pl = T.place[id];
+        return { id, label: pl.name.split(',')[0], lon: pl.lon!, lat: pl.lat!, n: vm.by[id].length, sel: sel === id };
+      }),
+    [vm, sel],
+  );
+  const detailedMoves: MapMove[] = useMemo(
+    () =>
+      vm.segs.map((s) => {
+        const rt = route(s.a, s.b);
+        let coords: [number, number][];
+        if (rt) coords = rt.map((p) => [p[0], p[1]] as [number, number]);
+        else {
+          // A gentle curve between the two places.
+          const [x1, y1, x2, y2] = [s.a.lon!, s.a.lat!, s.b.lon!, s.b.lat!];
+          const cx = (x1 + x2) / 2 + (y2 - y1) * 0.22;
+          const cy = (y1 + y2) / 2 - (x2 - x1) * 0.22;
+          coords = Array.from({ length: 21 }, (_, i) => {
+            const t = i / 20;
+            return [(1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2] as [number, number];
+          });
+        }
+        return { key: s.a.id + '>' + s.b.id, coords, recent: year - s.y <= 10 };
+      }),
+    [vm, year],
+  );
+
   const maxA = Math.max(1, ...Object.values(vm.alive));
   const summary = Object.keys(vm.alive)
     .sort((a, b) => vm.alive[b] - vm.alive[a])
@@ -297,12 +349,31 @@ export function MapView() {
             </div>
           )}
           {noCoords > 0 && (
-            <p className="muted small" style={{ margin: 0 }}>
-              {noCoords} place{noCoords === 1 ? '' : 's'} have no map position yet. Open a place and add its latitude and longitude to show it here.
-            </p>
+            <div className="privacy-note" style={{ flexDirection: 'column', gap: 8 }}>
+              <span>
+                {noCoords} place{noCoords === 1 ? ' has' : 's have'} no map position yet.
+              </span>
+              <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => setUi({ modal: { kind: 'geocodeAll' } })}>
+                <Icon name="map" sm />
+                Find them on the map…
+              </button>
+            </div>
           )}
         </div>
         <div className="mapcanvas" ref={boxRef}>
+          {kind === 'detailed' && !failNote && (
+            <DetailedMap
+              pins={detailedPins}
+              moves={detailedMoves}
+              bounds={[R[0], -(R[1] + R[3]), R[0] + R[2], -R[1]]}
+              onSelect={setSel}
+              onFail={(why) => {
+                console.warn('Detailed map unavailable:', why);
+                setFailNote('The detailed map needs the internet the first time you look at an area. Showing the simple map instead.');
+              }}
+            />
+          )}
+          {(kind === 'simple' || failNote) && (
           <svg viewBox={R.join(' ')} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Map of family places and migrations">
             <rect x={R[0] - 50} y={R[1] - 50} width={R[2] + 100} height={R[3] + 100} style={{ fill: 'var(--sea)' }} />
             {LAND_PTS.map((p, i) => (
@@ -337,10 +408,14 @@ export function MapView() {
               );
             })}
           </svg>
-          <div className="mapbtns">
+          )}
+          <div className="mapbtns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', left: 16 }}>
+            <Seg label="Map style" value={kind} onChange={setKind} options={[['detailed', 'Detailed'], ['simple', 'Simple']]} />
             <Seg label="Map area" value={region} onChange={setRegion} options={[['world', 'World'], ['uk', 'British Isles'], ['aus', 'Eastern Australia'], ['fit', 'All my places']]} />
           </div>
-          <div className="mapnote">{vm.shown.length} events shown · works offline · detailed street maps arrive in a later update</div>
+          <div className="mapnote">
+            {vm.shown.length} events shown · {failNote || (kind === 'detailed' ? 'areas you’ve viewed are saved for offline use' : 'simple map · works offline')}
+          </div>
         </div>
       </div>
     </div>

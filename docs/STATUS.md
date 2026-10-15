@@ -1,6 +1,6 @@
 # Build status
 
-Updated 15 Oct 2026.
+Updated 15 Oct 2026 (v0.3.0).
 
 ## Done
 
@@ -11,9 +11,12 @@ Updated 15 Oct 2026.
 - Sample tree (`src/lib/sample.ts`), Tree (family / pedigree / descendants, pan, zoom, pinch), People, Person profile, Sources and citations, Media (real files, thumbnails, face tagging, profile photos), Search, Research (tasks, unverified list, hints from a sample provider), GEDCOM 5.5.1 import (preview, problems, merge with duplicate matching, or new tree) and export (living excluded), local backups (scheduled, manual, restore, copy to a folder), native menus, keyboard shortcuts.
 - Release workflow builds Windows (.exe/.msi), macOS (universal .dmg) and Linux installers into a draft GitHub Release.
 
-**Phase 2: charts, map and polish**: partly done.
-- Done: fan / pedigree / descendant charts with colour modes and print, family history book exported as a real PDF through the system print dialog, map with pins, migration arrows and the timeline (stylised offline map from the prototype).
-- To do: app password lock and SQLCipher encryption toggle, auto-updater (needs an updater signing key in GitHub secrets), accessibility pass, MapLibre detailed tiles with offline caching.
+**Phase 2: charts, map and polish**: complete (v0.3.0).
+- Fan / pedigree / descendant charts with colour modes and print; family history book as a real PDF via the system print dialog.
+- Map with pins, migration arrows and the timeline: detailed MapLibre map (OpenFreeMap tiles through the `tilecache://` protocol, cached in `<app data>/tilecache`, 400 MB cap) with the stylised offline map as fallback. "Find on map" uses OpenStreetMap Nominatim.
+- App password lock (PBKDF2 verifier in prefs, password only in memory) and per-tree SQLCipher encryption with the app password; backups stay encrypted; change/remove password re-keys or decrypts every file.
+- Accessibility: axe scan clean on every screen, contrast checked for all themes, keyboard tree navigation, skip link, reduced motion.
+- Auto-updater: not done. Casey chose manual installs, because the repo is private and private repos can't serve updates.
 
 ## Next
 

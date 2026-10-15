@@ -25,7 +25,7 @@ export function FirstRun() {
   const trees = useData((s) => s.prefs.trees);
   const sorted = trees.slice().sort((a, b) => b.lastOpened.localeCompare(a.lastOpened));
   return (
-    <div className="first" style={{ overflow: 'auto' }}>
+    <main className="first" style={{ overflow: 'auto' }}>
       <div className="first-inner">
         <svg className="illo" viewBox="0 0 160 110" style={{ width: 160, height: 110 }} aria-hidden="true">
           <path className="fillsoft" d="M80 18c-22 0-38 14-38 32 0 16 14 28 32 30v22h12V80c18-2 32-14 32-30 0-18-16-32-38-32z" />
@@ -91,7 +91,7 @@ export function FirstRun() {
         )}
         <p className="fine">Your tree is stored on this computer. Nothing is shared until you invite someone.</p>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -109,7 +109,7 @@ export function EmptyTree() {
     }
   };
   return (
-    <div className="first">
+    <main className="first">
       <div className="first-inner">
         <svg className="illo" viewBox="0 0 160 110" style={{ width: 160, height: 110 }} aria-hidden="true">
           <circle className="fillsoft" cx="80" cy="46" r="26" />
@@ -130,13 +130,13 @@ export function EmptyTree() {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
 export function ImportStart() {
   return (
-    <div className="first" style={{ overflow: 'auto', alignItems: 'flex-start', paddingTop: 40 }}>
+    <main className="first" style={{ overflow: 'auto', alignItems: 'flex-start', paddingTop: 40 }}>
       <div className="first-inner" style={{ textAlign: 'left', alignItems: 'stretch' }}>
         <div className="row">
           <button className="btn ghost" onClick={() => setUi({ screen: 'first' })}>
@@ -148,6 +148,6 @@ export function ImportStart() {
           <GedcomImport newTreeOnly />
         </section>
       </div>
-    </div>
+    </main>
   );
 }

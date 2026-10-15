@@ -13,11 +13,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 use tauri::{AppHandle, State};
 
-use crate::storage::{tree_dir, valid_id};
+use crate::crypto::{self, KeyState};
+use crate::storage::{app_dir, tree_dir, valid_id};
 
 pub struct OpenTree {
     pub id: String,
     pub conn: Connection,
+    pub encrypted: bool,
 }
 
 #[derive(Default)]
@@ -43,6 +45,7 @@ pub struct TreeOpenInfo {
     pub path: String,
     pub media_dir: String,
     pub is_new: bool,
+    pub encrypted: bool,
 }
 
 pub fn to_sql(v: &Json) -> Value {
@@ -119,21 +122,23 @@ pub fn db_file(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-pub async fn tree_open(app: AppHandle, state: State<'_, DbState>, id: String) -> Result<TreeOpenInfo, String> {
+pub async fn tree_open(app: AppHandle, state: State<'_, DbState>, keys: State<'_, KeyState>, id: String) -> Result<TreeOpenInfo, String> {
     valid_id(&id)?;
     let dir = tree_dir(&app, &id)?;
     let media = dir.join("media");
     std::fs::create_dir_all(&media).map_err(|e| e.to_string())?;
     let path = dir.join("tree.db");
     let is_new = !path.exists();
-    let conn = open_connection(&path)?;
+    let key = session_key(&keys);
+    let (conn, encrypted) = crypto::open_smart(&path, key.as_deref())?;
     let mut guard = state.0.lock().map_err(|_| "Database lock poisoned".to_string())?;
-    *guard = Some(OpenTree { id: id.clone(), conn });
+    *guard = Some(OpenTree { id: id.clone(), conn, encrypted });
     Ok(TreeOpenInfo {
         id,
         path: path.to_string_lossy().into_owned(),
         media_dir: media.to_string_lossy().into_owned(),
         is_new,
+        encrypted,
     })
 }
 
@@ -214,4 +219,106 @@ mod tests {
         let r = run_query(&conn, "SELECT count(*) FROM t", &[]).unwrap();
         assert_eq!(r.rows[0][0], Json::from(0));
     }
+}
+
+pub fn session_key(keys: &State<'_, KeyState>) -> Option<String> {
+    keys.0.lock().ok().and_then(|g| g.clone())
+}
+
+/// Remembers (or forgets) the app password for this session after the person unlocks.
+#[tauri::command]
+pub async fn app_set_key(keys: State<'_, KeyState>, key: Option<String>) -> Result<(), String> {
+    let mut g = keys.0.lock().map_err(|_| "Key lock poisoned".to_string())?;
+    *g = key.filter(|k| !k.is_empty());
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn tree_is_encrypted(app: AppHandle, state: State<'_, DbState>, id: String) -> Result<bool, String> {
+    valid_id(&id)?;
+    if let Ok(g) = state.0.lock() {
+        if let Some(t) = g.as_ref().filter(|t| t.id == id) {
+            return Ok(t.encrypted);
+        }
+    }
+    Ok(crypto::is_encrypted(&db_file(&app, &id)?))
+}
+
+fn backup_files(app: &AppHandle, id: &str) -> Vec<PathBuf> {
+    let dir = match app_dir(app) {
+        Ok(d) => d.join("backups").join(id),
+        Err(_) => return vec![],
+    };
+    std::fs::read_dir(dir)
+        .map(|it| it.flatten().map(|e| e.path()).filter(|p| p.extension().map(|x| x == "db").unwrap_or(false)).collect())
+        .unwrap_or_default()
+}
+
+/// Encrypts (or decrypts) one tree and its backups with the session password.
+#[tauri::command]
+pub async fn tree_set_encryption(
+    app: AppHandle,
+    state: State<'_, DbState>,
+    keys: State<'_, KeyState>,
+    id: String,
+    encrypt: bool,
+) -> Result<(), String> {
+    valid_id(&id)?;
+    let key = session_key(&keys);
+    if encrypt && key.is_none() {
+        return Err("Set an app password first".into());
+    }
+    let path = db_file(&app, &id)?;
+    let mut guard = state.0.lock().map_err(|_| "Database lock poisoned".to_string())?;
+    let was_open = guard.as_ref().map(|t| t.id == id).unwrap_or(false);
+    if was_open {
+        *guard = None; // close it while the file is rewritten
+    }
+    let target = if encrypt { key.as_deref() } else { None };
+    let res = crypto::convert_file(&path, key.as_deref(), target);
+    for b in backup_files(&app, &id) {
+        let _ = crypto::convert_file(&b, key.as_deref(), target);
+    }
+    if was_open {
+        let (conn, encrypted) = crypto::open_smart(&path, key.as_deref())?;
+        *guard = Some(OpenTree { id: id.clone(), conn, encrypted });
+    }
+    res
+}
+
+/// Changes the password on every encrypted tree and backup. Returns how many files were updated.
+#[tauri::command]
+pub async fn app_change_key(
+    app: AppHandle,
+    state: State<'_, DbState>,
+    keys: State<'_, KeyState>,
+    old: String,
+    new: String,
+) -> Result<u32, String> {
+    if new.is_empty() {
+        return Err("The new password can't be empty".into());
+    }
+    let mut guard = state.0.lock().map_err(|_| "Database lock poisoned".to_string())?;
+    let open_id = guard.as_ref().map(|t| t.id.clone());
+    *guard = None;
+    let trees = app_dir(&app)?.join("trees");
+    let mut n = 0;
+    if let Ok(it) = std::fs::read_dir(&trees) {
+        for e in it.flatten() {
+            let id = e.file_name().to_string_lossy().into_owned();
+            let mut files = vec![e.path().join("tree.db")];
+            files.extend(backup_files(&app, &id));
+            for f in files {
+                if crypto::is_encrypted(&f) && crypto::convert_file(&f, Some(&old), Some(&new)).is_ok() {
+                    n += 1;
+                }
+            }
+        }
+    }
+    *keys.0.lock().map_err(|_| "Key lock poisoned".to_string())? = Some(new.clone());
+    if let Some(id) = open_id {
+        let (conn, encrypted) = crypto::open_smart(&db_file(&app, &id)?, Some(&new))?;
+        *guard = Some(OpenTree { id, conn, encrypted });
+    }
+    Ok(n)
 }

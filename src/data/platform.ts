@@ -321,3 +321,60 @@ export async function onCloseRequested(handler: () => Promise<void>): Promise<()
 export function newId(): string {
   return crypto.randomUUID();
 }
+
+// ---------- app password & encryption ----------
+export const NEEDS_PASSWORD = 'NEEDS_PASSWORD';
+
+export async function setSessionKey(key: string | null): Promise<void> {
+  if (!isTauri()) return;
+  const { invoke } = await tauriCore();
+  await invoke('app_set_key', { key });
+}
+
+export async function isTreeEncrypted(id: string): Promise<boolean> {
+  if (!isTauri()) return false;
+  const { invoke } = await tauriCore();
+  return invoke<boolean>('tree_is_encrypted', { id });
+}
+
+export async function setTreeEncryption(id: string, encrypt: boolean): Promise<void> {
+  if (!isTauri()) throw new Error('Encryption is only available in the desktop app');
+  const { invoke } = await tauriCore();
+  await invoke('tree_set_encryption', { id, encrypt });
+}
+
+export async function changeKey(old: string, next: string): Promise<number> {
+  if (!isTauri()) return 0;
+  const { invoke } = await tauriCore();
+  return invoke<number>('app_change_key', { old, new: next });
+}
+
+// ---------- maps ----------
+/** URL for a map file, routed through the app's offline tile cache in the desktop app. */
+export function tileUrl(url: string): string {
+  return isTauri() && /^https?:\/\//.test(url) ? convertFileSrc(url, 'tilecache') : url;
+}
+
+export interface GeoResult {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
+export async function geocode(query: string): Promise<GeoResult[]> {
+  if (!isTauri()) throw new Error('Place search works in the desktop app');
+  const { invoke } = await tauriCore();
+  return invoke<GeoResult[]>('geocode', { query });
+}
+
+export async function mapCacheInfo(): Promise<number> {
+  if (!isTauri()) return 0;
+  const { invoke } = await tauriCore();
+  return invoke<number>('map_cache_info');
+}
+
+export async function mapCacheClear(): Promise<void> {
+  if (!isTauri()) return;
+  const { invoke } = await tauriCore();
+  await invoke('map_cache_clear');
+}

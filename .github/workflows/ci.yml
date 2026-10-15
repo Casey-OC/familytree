@@ -32,3 +32,26 @@ jobs:
       - name: Native tests
         working-directory: src-tauri
         run: cargo test
+
+  native-build:
+    # Compiles the native side (including the encrypted database) on Windows and macOS.
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+      - name: NASM (for OpenSSL on Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: ilammy/setup-nasm@v1
+      - name: Placeholder interface
+        shell: bash
+        run: mkdir -p dist && echo '<html></html>' > dist/index.html
+      - name: Native tests
+        working-directory: src-tauri
+        run: cargo test

@@ -43,6 +43,10 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: NASM (for OpenSSL on Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: ilammy/setup-nasm@v1
+
       - name: Linux build dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
