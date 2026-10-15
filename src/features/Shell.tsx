@@ -43,6 +43,9 @@ export function Shell() {
 
   return (
     <>
+      <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); (document.querySelector('#main') as HTMLElement | null)?.focus(); }}>
+        Skip to main content
+      </a>
       <TopBar />
       <div className="decoband" aria-hidden="true" />
       <div
@@ -67,7 +70,7 @@ export function Shell() {
             <span>Saved on this computer · {T.data.people.length} people</span>
           </div>
         </nav>
-        <div className={'main' + (pinned && panel ? ' pinned' : '')}>
+        <main className={'main' + (pinned && panel ? ' pinned' : '')} id="main" tabIndex={-1} style={{ outline: 'none' }}>
           {section === 'home' && <Home />}
           {section === 'tree' && <TreeView />}
           {section === 'people' && <People />}
@@ -91,7 +94,7 @@ export function Shell() {
           {section === 'research' && <Research />}
           {section === 'settings' && <Settings />}
           <DetailPanel />
-        </div>
+        </main>
       </div>
       <BottomNav />
     </>

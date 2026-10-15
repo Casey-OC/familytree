@@ -229,7 +229,7 @@ export function FanSvg({ T, root, gens, colour, full, photos, interactive, hideL
   const p = T.person[root];
   const ry = full ? -34 : -fan.r0 + 12;
   return (
-    <svg viewBox={fan.vb} role="img" aria-label={`Fan chart of ${T.nm(root)}’s ancestors`}>
+    <svg viewBox={fan.vb} role={interactive ? 'group' : 'img'} aria-label={`Fan chart of ${T.nm(root)}’s ancestors`}>
       {fan.segs.map((s, i) => (
         <g
           key={i}
@@ -274,7 +274,7 @@ export function FanSvg({ T, root, gens, colour, full, photos, interactive, hideL
 export function PedigreeSvg({ T, root, gens, colour, photos, interactive }: SvgProps & { photos: boolean }) {
   const ped = useMemo(() => pedigreeChart(T, root, gens, colour, photos), [T, root, gens, colour, photos]);
   return (
-    <svg viewBox={ped.vb} role="img" aria-label={`Pedigree chart of ${T.nm(root)}`}>
+    <svg viewBox={ped.vb} role={interactive ? 'group' : 'img'} aria-label={`Pedigree chart of ${T.nm(root)}`}>
       {ped.lines.map((d, i) => (
         <path key={i} className="pline" d={d} />
       ))}
@@ -312,7 +312,7 @@ export function PedigreeSvg({ T, root, gens, colour, photos, interactive }: SvgP
 export function DescSvg({ T, root, gens, colour, interactive }: SvgProps) {
   const desc = useMemo(() => descendantChart(T, root, gens, colour), [T, root, gens, colour]);
   return (
-    <svg viewBox={desc.vb} role="img" aria-label={`Descendants of ${T.nm(root)}`}>
+    <svg viewBox={desc.vb} role={interactive ? 'group' : 'img'} aria-label={`Descendants of ${T.nm(root)}`}>
       {desc.lines.map((d, i) => (
         <path key={i} className="pline" d={d} />
       ))}

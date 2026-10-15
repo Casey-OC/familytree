@@ -95,7 +95,7 @@ function GedcomExport() {
       <div className="muted small">
         {out.people} people · {out.families} families · {out.excluded} living people excluded · {out.lines.toLocaleString()} lines · GEDCOM 5.5.1, UTF-8
       </div>
-      <pre className="pre">{out.text.split('\n').slice(0, 40).join('\n') + '\n…'}</pre>
+      <pre className="pre" tabIndex={0} aria-label="Preview of the GEDCOM file">{out.text.split('\n').slice(0, 40).join('\n') + '\n…'}</pre>
       <button className="btn primary" onClick={save} style={{ alignSelf: 'flex-start' }}>
         <Icon name="download" sm />
         Export .ged

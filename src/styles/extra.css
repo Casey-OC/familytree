@@ -118,3 +118,12 @@ audio.native { width: 100%; }
   .bk-index div { break-inside: avoid; margin-bottom: 1mm; }
   .fanseg, .pbox rect, .printpage rect, .printpage path { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* accessibility helpers */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: 12px; top: -60px; z-index: 200; background: var(--pri); color: var(--on-pri); padding: 10px 16px; border-radius: 10px; font-weight: 700; }
+.skip-link:focus { top: 10px; }
+.tcard:focus-within { border-color: var(--pri); }
+@media (prefers-reduced-motion: reduce) {
+  .app *, .app *::before, .app *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

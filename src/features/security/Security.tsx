@@ -75,7 +75,7 @@ export function LockScreen() {
     }
   };
   return (
-    <div className="first">
+    <main className="first">
       <form
         className="first-inner"
         style={{ maxWidth: 440 }}
@@ -103,7 +103,7 @@ export function LockScreen() {
         </button>
         <p className="fine">Forgotten it? Trees that aren’t encrypted are still safe on this computer; encrypted trees can only be opened with this password.</p>
       </form>
-    </div>
+    </main>
   );
 }
 

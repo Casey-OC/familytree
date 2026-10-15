@@ -20,7 +20,7 @@ export function DetailPanel() {
       (panel.kind === 'media' && T.media[panel.id]) ||
       (panel.kind === 'place' && T.place[panel.id]));
   return (
-    <aside className={'panel' + (exists ? ' open' : '')} aria-label="Details" aria-hidden={!exists}>
+    <aside className={'panel' + (exists ? ' open' : '')} aria-label="Details" aria-hidden={!exists} {...(exists ? {} : { inert: '' })}>
       <div className="ph">
         <button className={pinned ? 'btn sm gold' : 'btn sm ghost'} onClick={() => setUi({ pinned: !pinned })} aria-pressed={pinned}>
           <Icon name="pin" sm />
