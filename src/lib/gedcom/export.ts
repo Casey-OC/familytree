@@ -65,7 +65,7 @@ export function exportGedcom(T: TreeApi, opts: ExportOptions): { text: string; p
   push(L, 0, 'HEAD');
   push(L, 1, 'SOUR', 'FAMILYTREE');
   push(L, 2, 'NAME', 'Family Tree');
-  push(L, 2, 'VERS', '0.1.0');
+  push(L, 2, 'VERS', '0.2.0');
   push(L, 1, 'DATE', toGedcomDate(`${now.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.getMonth()]} ${now.getFullYear()}`, 'exact'));
   if (opts.treeName) push(L, 1, 'FILE', opts.treeName.replace(/[\\/:*?"<>|]/g, '') + '.ged');
   push(L, 1, 'SUBM', '@U1@');
