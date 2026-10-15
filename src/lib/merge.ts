@@ -110,7 +110,7 @@ export function notDuplicates(d: TreeData): Set<string> {
 export const notDuplicateKey = pairKey;
 
 /** People in this tree who look like the same person entered twice, most likely first. */
-export function findDuplicatePeople(d: TreeData, minScore = 60): DuplicatePair[] {
+export function findDuplicatePeople(d: TreeData, minScore = 50): DuplicatePair[] {
   const T = treeApi(d);
   const skip = notDuplicates(d);
   const bySurname: Record<string, Person[]> = {};
@@ -148,7 +148,10 @@ function scorePair(T: ReturnType<typeof treeApi>, d: TreeData, a: Person, b: Per
     reasons.push(gap === 0 ? `Both born ${ya}` : `Born ${ya} and ${yb}`);
   } else if (ya === 9999 && yb === 9999) {
     reasons.push('No birth year for either');
-  } else score += 5;
+  } else {
+    score += 10;
+    reasons.push('Only one has a birth year');
+  }
   const bpA = T.ff(a.id, 'Birth')?.placeId;
   const bpB = T.ff(b.id, 'Birth')?.placeId;
   if (bpA && bpB && (bpA === bpB || norm(T.placeName(bpA)).split(' ')[0] === norm(T.placeName(bpB)).split(' ')[0])) {
