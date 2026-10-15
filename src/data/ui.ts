@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
 export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile';
-export type ProfileTab = 'overview' | 'photos' | 'family' | 'life' | 'sources';
+export type ProfileTab = 'overview' | 'timeline' | 'stories' | 'photos' | 'family' | 'sources';
 export type Screen = 'loading' | 'auth' | 'recovery' | 'about' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
 export type PersonTab = 'facts' | 'relationships' | 'media' | 'notes' | 'sources' | 'research';
@@ -17,6 +17,7 @@ export interface FactForm {
   date: string;
   date2: string;
   place: string; // place name as typed
+  home: string; // Birth / Death: where they lived at the time, as typed
   desc: string;
   conf: 'auto' | 'Proven' | 'Probable' | 'Unverified';
   cites: string[];
@@ -42,7 +43,8 @@ export type Modal =
   | { kind: 'geocodeAll' }
   | { kind: 'adjustPhoto'; pid: string }
   | { kind: 'choosePhoto'; pid: string; purpose: 'profile' | 'cover' }
-  | { kind: 'merge'; keep: string; other: string };
+  | { kind: 'merge'; keep: string; other: string }
+  | { kind: 'story'; pid: string; id?: string };
 
 export interface UiState {
   screen: Screen;

@@ -22,6 +22,7 @@ function withDuplicate(): TreeData {
     date2: '',
     sortYear: 1950,
     placeId: '',
+    homePlaceId: '',
     desc: 'Cane cutter',
     conf: 'auto',
     citeIds: [],

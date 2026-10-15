@@ -107,47 +107,51 @@ export function Icon({ name, sm, className }: { name: keyof typeof PATHS | strin
 /** A person's avatar: their chosen photo (cropped to their face), the sample illustration, or initials. */
 const imgAspects = new Map<string, number>();
 
-/** An image fitted into its box (cover), centred on crop.x/y and zoomed by crop.z. The box must be position: relative. */
-export function FramedImg({ url, crop, boxAspect = 1, className }: { url: string; crop: PhotoCrop; boxAspect?: number; className?: string }) {
+/**
+ * An image fitted into its box (cover), centred on crop.x/y and zoomed by crop.z. The box must be position: relative.
+ * Until the photo's shape is known it is shown centred and filling the box, so it is never invisible.
+ */
+export function FramedImg({ url, crop, boxAspect = 1, className, onError }: { url: string; crop: PhotoCrop; boxAspect?: number; className?: string; onError?: () => void }) {
   const [a, setA] = useState(imgAspects.get(url) || 0);
   const ref = useRef<HTMLImageElement>(null);
   const learn = (img: HTMLImageElement) => {
-    if (!img.naturalWidth) return;
+    if (!img.naturalWidth || !img.naturalHeight) return;
     const v = img.naturalWidth / img.naturalHeight;
     imgAspects.set(url, v);
     setA(v);
   };
   useEffect(() => {
-    if (ref.current?.complete) learn(ref.current);
+    const img = ref.current;
+    if (img?.complete) learn(img);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
-  const r = frameRect((a || 1) / boxAspect, crop);
-  return (
-    <img
-      ref={ref}
-      src={url}
-      alt=""
-      draggable={false}
-      className={className}
-      onLoad={(e) => learn(e.currentTarget)}
-      style={{ position: 'absolute', maxWidth: 'none', width: r.w * 100 + '%', height: r.h * 100 + '%', left: r.left * 100 + '%', top: r.top * 100 + '%', opacity: a ? 1 : 0 }}
-    />
-  );
+  const style: React.CSSProperties = a
+    ? (() => {
+        const r = frameRect(a / boxAspect, crop);
+        return { position: 'absolute', maxWidth: 'none', width: r.w * 100 + '%', height: r.h * 100 + '%', left: r.left * 100 + '%', top: r.top * 100 + '%' };
+      })()
+    : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${crop.x}% ${crop.y}%` };
+  return <img ref={ref} src={url} alt="" draggable={false} className={className} onLoad={(e) => learn(e.currentTarget)} onError={onError} style={style} />;
 }
 
 export function Avatar({ pid, size = '', style }: { pid: string; size?: '' | 'sm' | 'xs' | 'lg' | 'xl'; style?: React.CSSProperties }) {
   const data = useData((s) => s.data);
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
   const T = treeApi(data);
   const p = T.person[pid];
-  const cls = 'av' + (size ? ' ' + size : '');
+  const sexCls = p?.sex === 'M' ? ' male' : p?.sex === 'F' ? ' female' : '';
+  const cls = 'av' + (size ? ' ' + size : '') + sexCls;
   if (!p) return <span className={cls} aria-hidden="true">?</span>;
   if (p.photoMediaId) {
     const m = T.media[p.photoMediaId];
-    const url = m ? mediaUrl(size === 'xl' ? m.file || m.thumb : m.thumb || m.file) : '';
-    if (url) {
+    // Try the small copy first (the full photo for big sizes), then the other one if it won't load.
+    const order = m ? (size === 'xl' ? [m.file, m.thumb] : [m.thumb, m.file]).filter(Boolean) : [];
+    const rel = order.find((r) => !failed[r]);
+    const url = rel ? mediaUrl(rel) : '';
+    if (url && rel) {
       return (
         <span className={cls + ' img'} aria-hidden="true" style={style}>
-          <FramedImg url={url} crop={defaultCrop(p, m)} />
+          <FramedImg key={url} url={url} crop={defaultCrop(p, m)} onError={() => setFailed((f) => ({ ...f, [rel]: true }))} />
         </span>
       );
     }

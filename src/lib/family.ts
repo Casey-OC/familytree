@@ -2,6 +2,7 @@
 // Built once per snapshot (cached), so components can call these freely.
 
 import { confOf } from './confidence';
+import { ageLabel } from './ages';
 import { dateLabel, factYear } from './dates';
 import type { Citation, Confidence, Fact, Media, Person, Place, Source, TagInfo, TreeData } from './types';
 
@@ -46,6 +47,8 @@ export interface TreeApi {
   /** Photos and files on someone's profile: tagged or linked, and not hidden or waiting for approval. */
   profileMedia(id: string): Media[];
   tagOf(m: Media, id: string): TagInfo;
+  /** "aged 34" for an event in someone's life ('' if unknown). */
+  ageAt(id: string, f: Pick<Fact, 'type' | 'date' | 'q'>): string;
   branch(id: string): BranchInfo;
   branches(): BranchInfo[];
   generations(): number;
@@ -291,6 +294,7 @@ function build(data: TreeData): TreeApi {
     mediaOf: (id) => data.media.filter((m) => m.faces.some((f) => f.personId === id) || m.people.includes(id)),
     profileMedia: (id) => data.media.filter((m) => (m.faces.some((f) => f.personId === id) || m.people.includes(id)) && (m.tags?.[id]?.status || 'shown') === 'shown'),
     tagOf: (m, id) => m.tags?.[id] || { status: 'shown', by: m.addedBy },
+    ageAt: (id, f) => ageLabel(api.ff(id, 'Birth'), f),
     branch: (id) => {
       if (!branchMap) branchMap = computeBranches();
       return branchMap[id] || { key: 'other', label: 'Unlinked', colour: '#6B7A8C' };

@@ -535,18 +535,17 @@ export function AboutYouScreen() {
             </label>
           </div>
           <label className="fl">
+            Where your family lived when you were born <span className="muted">(optional)</span>
+            <input value={a.homeAtBirth || ''} onChange={(e) => set({ homeAtBirth: e.target.value })} placeholder="Town, state, country" />
+          </label>
+          <label className="fl">
             Where you live now
             <input value={a.livesIn} onChange={(e) => set({ livesIn: e.target.value })} placeholder="Town, state, country" autoComplete="address-level2" />
           </label>
-          <label className="fl" style={{ maxWidth: 280 }}>
-            Sex
-            <select value={a.sex} onChange={(e) => set({ sex: e.target.value as AboutYou['sex'] })}>
-              <option value="U">Prefer not to say</option>
-              <option value="F">Female</option>
-              <option value="M">Male</option>
-              <option value="X">Other</option>
-            </select>
-          </label>
+          <div className="fl" style={{ maxWidth: 280 }}>
+            <span>Sex</span>
+            <Seg label="Sex" value={a.sex} onChange={(v) => set({ sex: v as AboutYou['sex'] })} options={[['M', 'Male'], ['F', 'Female']]} />
+          </div>
           <div className="privacy-note">
             <Icon name="lock" />
             <span>You’re a living person, so your details stay private. Nothing is shared unless you choose to share it.</span>

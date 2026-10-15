@@ -2,11 +2,11 @@ import { DateInput } from '../components/DateInput';
 import { useState } from 'react';
 import { setPrefs, useData } from '../data/store';
 import { setUi, toast, useUi, type Modal } from '../data/ui';
-import { addMediaFromPicked, addTask, deletePerson, linkExistingPerson, openMedia, openSource, savePerson, saveSource, setRootPerson, setSetting, updatePerson } from '../data/actions';
+import { addMediaFromPicked, addTask, deletePerson, linkExistingPerson, sexProblem, openMedia, openSource, savePerson, saveSource, setRootPerson, setSetting, updatePerson } from '../data/actions';
 import { MEDIA_FILTERS, pickFile, type PickedFile } from '../data/platform';
 import { treeApi } from '../lib/family';
 import { SOURCE_TYPES } from '../lib/types';
-import { Avatar, ModalFrame, PlaceInput } from '../components/ui';
+import { Avatar, ModalFrame, PlaceInput, Seg } from '../components/ui';
 import { matchesForNew } from '../lib/merge';
 import { normaliseDate, yearOf } from '../lib/dates';
 import { THEMES } from '../lib/themes';
@@ -15,6 +15,7 @@ import { EncryptModal } from './security/Security';
 import { ChangePasswordModal } from './account/Account';
 import { AdjustPhotoModal, ChoosePhotoModal } from './profile/PhotoModals';
 import { MergeModal } from './profile/Merge';
+import { StoryModal } from './profile/Stories';
 
 export function Modals() {
   const modal = useUi((s) => s.modal);
@@ -47,6 +48,8 @@ export function Modals() {
       return <GeocodeAllModal close={close} />;
     case 'adjustPhoto':
       return <AdjustPhotoModal pid={modal.pid} close={close} />;
+    case 'story':
+      return <StoryModal pid={modal.pid} id={modal.id} close={close} />;
     case 'merge':
       return <MergeModal keep={modal.keep} other={modal.other} close={close} />;
     case 'choosePhoto':
@@ -195,15 +198,10 @@ function AddPersonModal({ m, close }: { m: M<'add'>; close: () => void }) {
           </label>
         </div>
         <div className="frow">
-          <label className="fl">
-            Sex
-            <select value={m.sex} onChange={(e) => patchModal({ sex: e.target.value })}>
-              <option value="U">Unknown</option>
-              <option value="F">Female</option>
-              <option value="M">Male</option>
-              <option value="X">Other</option>
-            </select>
-          </label>
+          <div className="fl">
+            <span>Sex</span>
+            <Seg label="Sex" value={m.sex} onChange={(v) => patchModal({ sex: v })} options={[['M', 'Male'], ['F', 'Female']]} />
+          </div>
           <label className="ck" style={{ alignSelf: 'end' }}>
             <input type="checkbox" checked={m.living} onChange={(e) => patchModal({ living: e.target.checked })} />
             Living (kept private by default)
@@ -269,6 +267,10 @@ function EditPersonModal({ m, close }: { m: M<'editPerson'>; close: () => void }
       toast('Add a name to continue');
       return;
     }
+    if (sexProblem(m.sex)) {
+      toast(sexProblem(m.sex));
+      return;
+    }
     const ok = await updatePerson(m.pid, { given: m.given.trim(), surname: m.surname.trim(), sex: m.sex, living: m.living, privacy: m.living ? 'Private' : 'Shared' });
     if (ok && m.root && T.rootId !== m.pid) await setRootPerson(m.pid);
     if (ok) {
@@ -290,15 +292,10 @@ function EditPersonModal({ m, close }: { m: M<'editPerson'>; close: () => void }
         </label>
       </div>
       <div className="frow">
-        <label className="fl">
-          Sex
-          <select value={m.sex} onChange={(e) => patchModal({ sex: e.target.value })}>
-            <option value="U">Unknown</option>
-            <option value="F">Female</option>
-            <option value="M">Male</option>
-            <option value="X">Other</option>
-          </select>
-        </label>
+        <div className="fl">
+          <span>Sex</span>
+          <Seg label="Sex" value={m.sex} onChange={(v) => patchModal({ sex: v })} options={[['M', 'Male'], ['F', 'Female']]} />
+        </div>
         <label className="ck" style={{ alignSelf: 'end' }}>
           <input type="checkbox" checked={m.living} onChange={(e) => patchModal({ living: e.target.checked })} />
           Living (kept private)

@@ -14,7 +14,14 @@ export function mix(hex: string, t: number): string {
   return `rgb(${m(r)},${m(g)},${m(b)})`;
 }
 
-export type ColourMode = 'branch' | 'line';
+export type ColourMode = 'sex' | 'branch' | 'line';
+
+/** Blue for male, pink for female (charts also print M / F, so colour is never the only clue). */
+export const SEX_COLOUR = { M: '#2F6DB5', F: '#C2477F', other: '#6B7A8C' };
+export const sexColour = (T: TreeApi, id: string | undefined) => {
+  const s = id ? T.person[id]?.sex : undefined;
+  return s === 'M' ? SEX_COLOUR.M : s === 'F' ? SEX_COLOUR.F : SEX_COLOUR.other;
+};
 
 const nmLbl = (T: TreeApi, id: string, g: number) => {
   const p = T.person[id];
@@ -69,7 +76,9 @@ export function fanChart(T: TreeApi, root: string, gens: number, colour: ColourM
       const lg = a1 - a0 > 180 ? 1 : 0;
       const d = `M${P0[0]} ${P0[1]}L${P1[0]} ${P1[1]}A${ro} ${ro} 0 ${lg} 1 ${P2[0]} ${P2[1]}L${P3[0]} ${P3[1]}A${ri} ${ri} 0 ${lg} 0 ${P0[0]} ${P0[1]}Z`;
       const fill =
-        colour === 'branch' ? (g >= 2 ? mix(BASE[(i >> (g - 2)) % BASE.length], 0.45 + g * 0.07) : mix('#B7862C', 0.55)) : mix(i < cnt / 2 ? '#2F6FA8' : '#C47A12', 0.4 + g * 0.09);
+        colour === 'sex'
+          ? mix(id ? sexColour(T, id) : i % 2 ? SEX_COLOUR.F : SEX_COLOUR.M, 0.4 + g * 0.08)
+          : colour === 'branch' ? (g >= 2 ? mix(BASE[(i >> (g - 2)) % BASE.length], 0.45 + g * 0.07) : mix('#B7862C', 0.55)) : mix(i < cnt / 2 ? '#2F6FA8' : '#C47A12', 0.4 + g * 0.09);
       const am = (a0 + a1) / 2;
       const rm = (ri + ro) / 2;
       const L = pt(rm, am);
@@ -135,7 +144,7 @@ export function pedigreeChart(T: TreeApi, root: string, gens: number, colour: Co
       if (!id && (g === 0 || !child)) continue;
       const x = 20 + g * GX;
       const y = (i + 0.5) * slot - bh / 2;
-      const bi = id ? (colour === 'branch' ? T.branch(id).colour : g === 0 ? '#6B7A8C' : i < cnt / 2 ? '#2F6FA8' : '#C47A12') : '#999';
+      const bi = id ? (colour === 'sex' ? sexColour(T, id) : colour === 'branch' ? T.branch(id).colour : g === 0 ? '#6B7A8C' : i < cnt / 2 ? '#2F6FA8' : '#C47A12') : '#999';
       boxes.push({
         x,
         y,
@@ -178,7 +187,8 @@ export function descendantChart(T: TreeApi, root: string, gens: number, colour: 
   const boxes = lay.nodes.map((n) => {
     const id = n.pid!;
     let c: string;
-    if (colour === 'branch') c = T.branch(id).colour;
+    if (colour === 'sex') c = sexColour(T, id);
+    else if (colour === 'branch') c = T.branch(id).colour;
     else {
       const li = lineIdx(id);
       c = li < 0 ? '#6B7A8C' : BASE[li % 8];

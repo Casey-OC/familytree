@@ -1,9 +1,9 @@
 name: Checks
 
+# Runs once per pull request change (not on every push as well), to save build minutes.
 on:
-  push:
-    branches-ignore: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -34,11 +34,12 @@ jobs:
         run: cargo test
 
   native-build:
-    # Compiles the native side (including the encrypted database) on Windows and macOS.
+    # Compiles the native side (including the encrypted database) on Windows.
+    # macOS is checked when a version tag is released (macOS machines use build minutes 10x faster).
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-latest, macos-latest]
+        platform: [windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4

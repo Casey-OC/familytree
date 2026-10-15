@@ -96,7 +96,7 @@ export function sampleTree(): TreeData {
     q?: Qualifier,
     page?: string,
   ) => {
-    const f: Fact = { id: 'f' + ++fn, personId: pid, type, q: q || 'exact', date, date2: '', sortYear: yearOf(date), placeId: place || '', desc: desc || '', citeIds: [], conf: 'auto' };
+    const f: Fact = { id: 'f' + ++fn, personId: pid, type, q: q || 'exact', date, date2: '', sortYear: yearOf(date), placeId: place || '', homePlaceId: '', desc: desc || '', citeIds: [], conf: 'auto' };
     (src ? (Array.isArray(src) ? src : [src]) : []).forEach((s) => {
       const c: Citation = { id: 'c' + ++cn, sourceId: s, page: page || 'Entry ' + (1000 + ((cn * 7919) % 8000)), accessed: '2 Mar 2024', quality: qual || 'Primary', extract: '' };
       cites.push(c);
@@ -272,6 +272,7 @@ export function sampleTree(): TreeData {
   ];
 
   return {
+    stories: [],
     people,
     rels,
     facts,
