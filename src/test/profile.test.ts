@@ -9,7 +9,12 @@ describe('profile photo framing', () => {
   it('fills the circle with no empty edges at any zoom', () => {
     for (const aspect of [0.5, 0.75, 1, 1.5, 3]) {
       for (const z of [1, 1.4, 2.6, 5]) {
-        for (const [x, y] of [[0, 0], [50, 50], [100, 100], [20, 80]]) {
+        for (const [x, y] of [
+          [0, 0],
+          [50, 50],
+          [100, 100],
+          [20, 80],
+        ]) {
           const r = frameRect(aspect, { x, y, z });
           expect(r.left).toBeLessThanOrEqual(0);
           expect(r.top).toBeLessThanOrEqual(0);
@@ -32,7 +37,13 @@ describe('profile photo framing', () => {
     const s = sampleTree();
     const p = s.people.find((x) => x.id === 'p12')!;
     const solo = { faces: [{ personId: 'p12', x: 50, y: 30 }] } as Media;
-    const group = { faces: [{ personId: 'p12', x: 20, y: 30 }, { personId: 'a', x: 50, y: 30 }, { personId: 'b', x: 80, y: 30 }] } as Media;
+    const group = {
+      faces: [
+        { personId: 'p12', x: 20, y: 30 },
+        { personId: 'a', x: 50, y: 30 },
+        { personId: 'b', x: 80, y: 30 },
+      ],
+    } as Media;
     expect(defaultCrop(p, solo)).toEqual({ x: 50, y: 30, z: 1.4 });
     expect(defaultCrop(p, group).z).toBeGreaterThan(2);
     expect(defaultCrop({ ...p, photoCrop: { x: 1, y: 2, z: 3 } }, group)).toEqual({ x: 1, y: 2, z: 3 });

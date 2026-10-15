@@ -1,7 +1,7 @@
 // A person's full profile page — one page per person, like a social profile:
 // cover photo, profile photo, about, photos (theirs and ones they're tagged in), family and life story.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useData } from '../../data/store';
 import { setUi, useUi, type ProfileTab } from '../../data/ui';
 import { centreOn, go, openMedia, openPerson, openProfile, openSource, setCoverPhoto, setProfilePhoto, setTagStatus } from '../../data/actions';
@@ -9,6 +9,7 @@ import { mediaUrl } from '../../data/platform';
 import { treeApi, type TreeApi } from '../../lib/family';
 import { dateLabel } from '../../lib/dates';
 import { closeFamily, visibilityLine, type CloseRelation } from '../../lib/profile';
+import { findDuplicatePeople } from '../../lib/merge';
 import type { Media, Person } from '../../lib/types';
 import { Avatar, Conf, Icon } from '../../components/ui';
 import { MediaThumb } from '../media/MediaThumb';
@@ -29,6 +30,7 @@ export function ProfilePage() {
   const tab = useUi((s) => s.profileTab);
   const back = useUi((s) => s.profileBack);
   const T = treeApi(data);
+  const dupes = useMemo(() => findDuplicatePeople(data).filter((x) => x.a === pid || x.b === pid), [data, pid]);
   const p = T.person[pid];
   if (!p) {
     return (
@@ -135,6 +137,9 @@ export function ProfilePage() {
               <Icon name="edit" sm />
               Edit facts
             </button>
+            <button className="btn sm ghost" onClick={() => setUi({ modal: { kind: 'merge', keep: pid, other: '' } })}>
+              Merge with a duplicate…
+            </button>
           </div>
         </div>
       </div>
@@ -146,6 +151,26 @@ export function ProfilePage() {
           </button>
         ))}
       </div>
+
+      {dupes.length > 0 && (
+        <div className="dupe-warn" role="status">
+          <span className="strong">This person may be in the tree twice</span>
+          {dupes.map((x) => {
+            const other = x.a === pid ? x.b : x.a;
+            return (
+              <div key={other} className="row" style={{ flexWrap: 'nowrap' }}>
+                <Avatar pid={other} size="xs" />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="li-t">{T.nm(other)}</span> <span className="li-s">{T.years(other) || 'No dates'} · {x.reasons.slice(0, 2).join(' · ')}</span>
+                </span>
+                <button className="btn sm primary" onClick={() => setUi({ modal: { kind: 'merge', keep: pid, other } })}>
+                  Compare and merge
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {pending.length > 0 && tab !== 'photos' && (
         <div className="privacy-note" role="status">

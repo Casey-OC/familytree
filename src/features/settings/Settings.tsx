@@ -157,7 +157,7 @@ function BackupTab() {
       toast('Couldn’t save the copy: ' + String((e as Error)?.message || e));
     }
   };
-  const reasonLabel: Record<string, string> = { manual: 'Backed up by you', auto: 'Automatic', close: 'When the app closed', 'before-import': 'Before a GEDCOM import', 'before-restore': 'Before a restore' };
+  const reasonLabel: Record<string, string> = { manual: 'Backed up by you', auto: 'Automatic', close: 'When the app closed', 'before-import': 'Before a GEDCOM import', 'before-restore': 'Before a restore', 'before-merge': 'Before merging two people' };
   return (
     <div className="grid2" style={{ alignItems: 'start' }}>
       <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

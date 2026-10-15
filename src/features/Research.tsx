@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { DuplicatesList, useDuplicateCount } from './profile/Merge';
 import { useData } from '../data/store';
 import { setUi, useUi } from '../data/ui';
 import { acceptHint, createTask, deleteTask, openPerson, setHintStatus, startEdit, updateTask } from '../data/actions';
@@ -12,6 +13,7 @@ export function Research() {
   const rtab = useUi((s) => s.rtab);
   const T = treeApi(data);
   const unvFacts = useMemo(() => data.facts.filter((f) => T.conf(f) === 'Unverified'), [data]);
+  const dupes = useDuplicateCount();
   const open = data.tasks.filter((t) => t.status !== 'Done').length;
   const pending = data.hints.filter((h) => h.status === 'pending').length;
   return (
@@ -34,8 +36,10 @@ export function Research() {
             ['tasks', `Tasks · ${open} open`],
             ['unv', `Unverified facts · ${unvFacts.length}`],
             ['hints', `Record hints · ${pending}`],
+            ['dupes', `Possible duplicates · ${dupes}`],
           ]}
         />
+        {rtab === 'dupes' && <DuplicatesList />}
         {rtab === 'tasks' && <TasksTab />}
         {rtab === 'unv' && (
           <>

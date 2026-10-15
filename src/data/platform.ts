@@ -239,7 +239,7 @@ export async function revealDataFolder(): Promise<string> {
 }
 
 // ---------- backups ----------
-export async function backupNow(treeId: string, reason: 'manual' | 'auto' | 'close' | 'before-import'): Promise<BackupInfo> {
+export async function backupNow(treeId: string, reason: 'manual' | 'auto' | 'close' | 'before-import' | 'before-merge'): Promise<BackupInfo> {
   if (isTauri()) {
     const { invoke } = await tauriCore();
     return invoke<BackupInfo>('backup_now', { treeId, reason });

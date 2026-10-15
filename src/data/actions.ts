@@ -8,7 +8,8 @@ import { newId } from './platform';
 import * as platform from './platform';
 import { treeApi } from '../lib/family';
 import { normaliseDate, todayLabel, yearOf } from '../lib/dates';
-import type { Fact, Hint, Media, Person, PhotoCrop, Place, TagStatus, Task, TreeData } from '../lib/types';
+import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, TagStatus, Task, TreeData } from '../lib/types';
+import { mergeInto, mergeProblem, notDuplicateKey, notDuplicates, type FieldChoice, type MergeResult } from '../lib/merge';
 import type { SqlLog } from './repo';
 
 const T = () => treeApi(getData());
@@ -140,28 +141,7 @@ export async function savePerson(f: Extract<NonNullable<ReturnType<typeof ui>['m
         d.facts.push(fact);
         sql.fact(fact);
       }
-      const R = (type: 'parent' | 'spouse' | 'sibling', a: string, b: string) => {
-        const r = { id: newId(), type, a, b, start: '', end: '' };
-        d.rels.push(r);
-        sql.rel(r);
-      };
-      const t = f.relTo;
-      const tree = treeApi(getData());
-      if (t && f.rel === 'child') {
-        R('parent', t, id);
-        if (f.other) R('parent', f.other, id);
-      }
-      if (t && f.rel === 'parent') {
-        const ex = tree.parents(t);
-        R('parent', id, t);
-        if (ex.length === 1 && !tree.spouseRelId(ex[0], id)) R('spouse', ex[0], id);
-      }
-      if (t && f.rel === 'spouse') R('spouse', t, id);
-      if (t && f.rel === 'sibling') {
-        const ps = tree.parents(t);
-        if (ps.length) ps.forEach((p) => R('parent', p, id));
-        else R('sibling', t, id);
-      }
+      linkAs(d, sql, f, id);
       if (!d.settings.root_person && d.people.length === 1) {
         d.settings.root_person = id;
         sql.setting('root_person', id);
@@ -173,6 +153,50 @@ export async function savePerson(f: Extract<NonNullable<ReturnType<typeof ui>['m
   if (ui().screen !== 'app') setUi({ screen: 'app', section: 'tree' });
   openPerson(id);
   toast(T().nm(id) + ' added to the tree');
+}
+
+/** Links person `id` to f.relTo in the role chosen in "Add a person" (skips links that already exist). */
+function linkAs(d: Draft<TreeData>, sql: SqlLog, f: { relTo: string; rel: string; other: string }, id: string) {
+  const has = (type: string, a: string, b: string) =>
+    d.rels.some((r) => r.type === type && ((r.a === a && r.b === b) || (type !== 'parent' && r.a === b && r.b === a)));
+  const R = (type: 'parent' | 'spouse' | 'sibling', a: string, b: string) => {
+    if (a === b || has(type, a, b)) return;
+    const r = { id: newId(), type, a, b, start: '', end: '' };
+    d.rels.push(r);
+    sql.rel(r);
+  };
+  const t = f.relTo;
+  const tree = treeApi(getData());
+  if (t && f.rel === 'child') {
+    R('parent', t, id);
+    if (f.other) R('parent', f.other, id);
+  }
+  if (t && f.rel === 'parent') {
+    const ex = tree.parents(t).filter((x) => x !== id);
+    R('parent', id, t);
+    if (ex.length === 1 && !tree.spouseRelId(ex[0], id)) R('spouse', ex[0], id);
+  }
+  if (t && f.rel === 'spouse') R('spouse', t, id);
+  if (t && f.rel === 'sibling') {
+    const ps = tree.parents(t);
+    if (ps.length) ps.forEach((p) => R('parent', p, id));
+    else R('sibling', t, id);
+  }
+}
+
+/** "Add a person" found them already in the tree: link that person instead of making a copy. */
+export async function linkExistingPerson(f: { relTo: string; rel: string; other: string }, existingId: string) {
+  if (f.relTo && f.rel !== 'none') {
+    if (f.rel === 'parent' && treeApi(getData()).parents(existingId).includes(f.relTo)) {
+      toast('They’re already recorded the other way round (as a child), so they can’t be a parent too.');
+      return;
+    }
+    const ok = await safe(() => commit((d, sql) => linkAs(d, sql, f, existingId)));
+    if (!ok) return;
+    toast(`Linked ${T().short(existingId)} as ${f.rel === 'spouse' ? 'partner' : f.rel} of ${T().short(f.relTo)}`);
+  }
+  setUi({ modal: null });
+  openPerson(existingId);
 }
 
 export async function updatePerson(pid: string, patch: Partial<Person>) {
@@ -706,4 +730,57 @@ export async function setSetting(key: string, value: string) {
       sql.setting(key, value);
     }),
   );
+}
+
+// ---------- duplicates ----------
+/** Merges two records of the same person into one profile. A backup is taken first. */
+export async function mergePeople(keepId: string, otherId: string, choice: FieldChoice = {}): Promise<boolean> {
+  const prob = mergeProblem(getData(), keepId, otherId);
+  if (prob) {
+    toast(prob);
+    return false;
+  }
+  const { treeId } = useData.getState();
+  const name = T().nm(keepId);
+  await platform.backupNow(treeId, 'before-merge').catch(() => undefined);
+  let res: MergeResult | null = null;
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      const r = mergeInto(d as TreeData, keepId, otherId, choice);
+      res = r;
+      const byId = <X extends { id: string }>(xs: X[], id: string) => xs.find((x) => x.id === id);
+      // Re-point everything first, then delete — deleting the old record removes anything still attached to it.
+      for (const id of r.changedPeople) sql.person(byId(d.people, id) as Person);
+      for (const id of r.changedFacts) sql.fact(byId(d.facts, id) as Fact);
+      for (const id of r.changedTasks) sql.task(byId(d.tasks, id) as Task);
+      for (const id of r.changedHints) sql.hint(byId(d.hints, id) as Hint);
+      for (const id of r.changedMedia) sql.media(byId(d.media, id) as Media);
+      for (const id of r.changedRels) sql.rel(byId(d.rels, id) as Relationship);
+      for (const key of r.changedSettings) sql.setting(key, d.settings[key]);
+      for (const id of r.removedFacts) sql.del('fact', id);
+      for (const id of r.removedRels) sql.del('relationship', id);
+      sql.del('person', otherId);
+    }),
+  );
+  if (!ok || !res) return false;
+  const u = ui();
+  setUi({
+    profilePid: u.profilePid === otherId ? keepId : u.profilePid,
+    panel: u.panel?.kind === 'person' && u.panel.id === otherId ? { kind: 'person', id: keepId } : u.panel,
+    focus: u.focus === otherId ? keepId : u.focus,
+  });
+  import('./store').then(({ setPrefs }) =>
+    setPrefs((p) => ({ recent: { ...p.recent, [treeId]: (p.recent[treeId] || []).map((x) => (x === otherId ? keepId : x)).filter((x, i, a) => a.indexOf(x) === i) } })),
+  );
+  const r = res as MergeResult;
+  toast(`Merged into one profile for ${name}${r.movedFacts || r.movedPhotos ? ` — ${r.movedFacts} fact${r.movedFacts === 1 ? '' : 's'} and ${r.movedPhotos} photo${r.movedPhotos === 1 ? '' : 's'} moved across` : ''}`);
+  return true;
+}
+
+/** Remembers that two people only look alike, so they aren't suggested again. */
+export async function markNotDuplicate(a: string, b: string) {
+  const set = notDuplicates(getData());
+  set.add(notDuplicateKey(a, b));
+  await setSetting('not_duplicates', JSON.stringify([...set]));
+  toast('Got it — they won’t be suggested again');
 }
