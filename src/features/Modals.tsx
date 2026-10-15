@@ -2,16 +2,19 @@ import { DateInput } from '../components/DateInput';
 import { useState } from 'react';
 import { setPrefs, useData } from '../data/store';
 import { setUi, toast, useUi, type Modal } from '../data/ui';
-import { addMediaFromPicked, addTask, deletePerson, openMedia, openSource, savePerson, saveSource, setRootPerson, setSetting, updatePerson } from '../data/actions';
+import { addMediaFromPicked, addTask, deletePerson, linkExistingPerson, openMedia, openSource, savePerson, saveSource, setRootPerson, setSetting, updatePerson } from '../data/actions';
 import { MEDIA_FILTERS, pickFile, type PickedFile } from '../data/platform';
 import { treeApi } from '../lib/family';
 import { SOURCE_TYPES } from '../lib/types';
-import { ModalFrame, PlaceInput } from '../components/ui';
+import { Avatar, ModalFrame, PlaceInput } from '../components/ui';
+import { matchesForNew } from '../lib/merge';
+import { normaliseDate, yearOf } from '../lib/dates';
 import { THEMES } from '../lib/themes';
 import { GeocodeAllModal } from './map/Geocode';
 import { EncryptModal } from './security/Security';
 import { ChangePasswordModal } from './account/Account';
 import { AdjustPhotoModal, ChoosePhotoModal } from './profile/PhotoModals';
+import { MergeModal } from './profile/Merge';
 
 export function Modals() {
   const modal = useUi((s) => s.modal);
@@ -44,6 +47,8 @@ export function Modals() {
       return <GeocodeAllModal close={close} />;
     case 'adjustPhoto':
       return <AdjustPhotoModal pid={modal.pid} close={close} />;
+    case 'merge':
+      return <MergeModal keep={modal.keep} other={modal.other} close={close} />;
     case 'choosePhoto':
       return <ChoosePhotoModal pid={modal.pid} purpose={modal.purpose} close={close} />;
     case 'comingSoon':
@@ -125,6 +130,7 @@ function AddPersonModal({ m, close }: { m: M<'add'>; close: () => void }) {
   const T = treeApi(data);
   const sp = m.relTo ? T.spouses(m.relTo) : [];
   const title = m.relTo && m.rel !== 'none' ? `Add ${m.rel} of ${T.short(m.relTo)}` : 'Add a person';
+  const matches = matchesForNew(data, m.given, m.surname, yearOf(normaliseDate(m.bdate)) || undefined).filter((id) => id !== m.relTo);
   return (
     <ModalFrame label={title} onClose={close}>
       <h2 className="h2">{title}</h2>
@@ -222,6 +228,23 @@ function AddPersonModal({ m, close }: { m: M<'add'>; close: () => void }) {
             <PlaceInput value={m.bplace} onChange={(v) => patchModal({ bplace: v })} />
           </label>
         </div>
+        {matches.length > 0 && (
+          <div className="dupe-warn" role="status">
+            <span className="strong">Already in your tree?</span>
+            <span className="small">Each person should have just one profile. If this is one of these people, use them instead of adding a copy.</span>
+            {matches.slice(0, 3).map((id) => (
+              <div key={id} className="row" style={{ flexWrap: 'nowrap' }}>
+                <Avatar pid={id} size="xs" />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="li-t">{T.nm(id)}</span> <span className="li-s">{T.years(id) || 'No dates'}</span>
+                </span>
+                <button type="button" className="btn sm primary" onClick={() => linkExistingPerson(m, id)}>
+                  {m.relTo && m.rel !== 'none' ? `Use them as ${m.rel === 'spouse' ? 'partner' : m.rel}` : 'Open their profile'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <p className="muted small" style={{ margin: 0 }}>
           New facts start as Unverified until you attach a source.
         </p>

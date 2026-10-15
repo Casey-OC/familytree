@@ -1,6 +1,6 @@
 # Build status
 
-Updated 15 Oct 2026 (v0.4.0).
+Updated 15 Oct 2026 (v0.5.0).
 
 ## Done
 
@@ -26,9 +26,17 @@ Updated 15 Oct 2026 (v0.4.0).
 - Calendar date picker on every date field (`src/components/DateInput.tsx`); partial dates ("1890", "Aug 1885") can still be typed.
 - "New tree" removed; "Import a GEDCOM file as a new tree" and "Explore the sample tree" are in the tree menu.
 
+**Profile pages and one profile per person**: complete (v0.5.0).
+- Full profile page per person (`src/features/profile/ProfilePage.tsx`): cover photo, profile photo, About, Photos, Family, Life story, Sources.
+- Profile photo framing (`src/lib/photoFrame.ts`): cover-fit at the right shape, centred on the face tag, with a saved per-person crop from "Adjust profile photo".
+- Photo tags: `media_tag` table (pending / shown / hidden, tagged by). Tags of another account holder wait for their approval. Any photo can be hidden from a profile.
+- Visibility (Casey's decision): close family (parents, children, siblings, partners, grandparents, grandchildren) see your profile; distant relatives need an invite. `src/lib/profile.ts`. Enforced online when the Family Wall arrives.
+- Duplicates (Casey's decision): living people with accounts are never duplicated; other duplicates must be merged into one profile. `src/lib/merge.ts`: finder (names, nicknames, years, places, parents, partners), merge (facts combined with all sources, photos, links, tasks, hints; backup first), "different people" memory, add-person warning. Each person has a permanent `profile_id`; merged IDs are mapped in the `merged_profiles` setting for cross-tree merging online.
+- Database schema v2 (migrates v0.4 trees automatically, including encrypted ones).
+
 ## Next
 
-Phase 3: Supabase project (Casey to create), online accounts, invites, Family Wall, moderation, life-event approval, offline post queue, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
+Phase 3: Supabase project (Casey to create), online accounts, invites, Family Wall, cross-tree profile linking and merging, online tag approval, moderation, life-event approval, offline post queue, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
 
 ## Decisions still open for Casey
 

@@ -213,3 +213,18 @@ fieldset.parentrow legend { font-weight: 700; padding: 0 6px; color: var(--muted
   .pf-life-date { grid-column: 1 / -1; }
 }
 .pf-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+
+/* ---------- duplicates and merging ---------- */
+.dupe-warn { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--amb-soft); border: 1px solid var(--line); color: var(--text); }
+.dupe-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px; }
+.dupe-people { display: flex; flex-direction: column; gap: 4px; }
+.dupe-why { display: flex; flex-direction: column; gap: 4px; }
+.merge-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.merge-col { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.merge-col.keep { border: 2px solid var(--pri); }
+.merge-choices { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.merge-choices legend { padding: 0 6px; }
+.merge-choice { display: grid; grid-template-columns: 170px 1fr 1fr; gap: 10px; align-items: center; }
+@media (max-width: 760px) {
+  .dupe-row, .merge-cols, .merge-choice { grid-template-columns: 1fr; }
+}

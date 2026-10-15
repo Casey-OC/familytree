@@ -13,8 +13,14 @@ export function closeFamily(T: TreeApi, pid: string): Map<string, CloseRelation>
   put(T.children(pid), 'child');
   put(T.spouses(pid), 'partner');
   put(T.siblings(pid), 'sibling');
-  put(T.parents(pid).flatMap((x) => T.parents(x)), 'grandparent');
-  put(T.children(pid).flatMap((x) => T.children(x)), 'grandchild');
+  put(
+    T.parents(pid).flatMap((x) => T.parents(x)),
+    'grandparent',
+  );
+  put(
+    T.children(pid).flatMap((x) => T.children(x)),
+    'grandchild',
+  );
   return out;
 }
 

@@ -70,7 +70,7 @@ export interface UiState {
   mf: { type: string; person: string; place: string; decade: string };
   tagMode: boolean;
   pendingFace: { x: number; y: number } | null;
-  rtab: 'tasks' | 'unv' | 'hints';
+  rtab: 'tasks' | 'unv' | 'hints' | 'dupes';
   tfilter: 'open' | 'To do' | 'In progress' | 'Done' | 'all';
   hintSel: string;
   taskOpen: string | null;
