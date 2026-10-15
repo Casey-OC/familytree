@@ -211,6 +211,8 @@ export function buildImport(text: string, fileName: string, sizeBytes: number, e
       people: [],
       sourceIds: [],
       createdAt: new Date().toISOString(),
+      addedBy: '',
+      tags: {},
     };
   };
   for (const r of roots.filter((x) => x.tag === 'OBJE' && x.xref)) {
@@ -252,8 +254,13 @@ export function buildImport(text: string, fileName: string, sizeBytes: number, e
     if (!given) given = (sm ? (sm[1] + ' ' + sm[3]).trim() : raw).replace(/\s+/g, ' ').trim();
     if (!surname && sm) surname = sm[2].trim();
     const sexRaw = val(r, 'SEX').toUpperCase();
+    const pidNew = uid('p');
     const p: Person = {
-      id: uid('p'),
+      id: pidNew,
+      photoCrop: null,
+      coverMediaId: null,
+      profileId: pidNew,
+      accountEmail: '',
       given,
       surname,
       sex: sexRaw === 'M' || sexRaw === 'F' ? sexRaw : sexRaw === 'X' ? 'X' : 'U',

@@ -3,7 +3,7 @@
 
 import { confOf } from './confidence';
 import { dateLabel, factYear } from './dates';
-import type { Citation, Confidence, Fact, Media, Person, Place, Source, TreeData } from './types';
+import type { Citation, Confidence, Fact, Media, Person, Place, Source, TagInfo, TreeData } from './types';
 
 const BRANCH_COLOURS = ['#2F6FA8', '#C47A12', '#2E8B6A', '#7B5BA6', '#4FA3D9', '#C4581A', '#A08524', '#8A5BA8'];
 const FOUNDERS_COLOUR = '#3D6B57';
@@ -43,6 +43,9 @@ export interface TreeApi {
   hintCount(id: string): number;
   placeName(id: string): string;
   mediaOf(id: string): Media[];
+  /** Photos and files on someone's profile: tagged or linked, and not hidden or waiting for approval. */
+  profileMedia(id: string): Media[];
+  tagOf(m: Media, id: string): TagInfo;
   branch(id: string): BranchInfo;
   branches(): BranchInfo[];
   generations(): number;
@@ -286,6 +289,8 @@ function build(data: TreeData): TreeApi {
     hintCount: (id) => data.hints.filter((h) => h.personId === id && h.status === 'pending').length,
     placeName: (id) => (id && place[id] ? place[id].name : ''),
     mediaOf: (id) => data.media.filter((m) => m.faces.some((f) => f.personId === id) || m.people.includes(id)),
+    profileMedia: (id) => data.media.filter((m) => (m.faces.some((f) => f.personId === id) || m.people.includes(id)) && (m.tags?.[id]?.status || 'shown') === 'shown'),
+    tagOf: (m, id) => m.tags?.[id] || { status: 'shown', by: m.addedBy },
     branch: (id) => {
       if (!branchMap) branchMap = computeBranches();
       return branchMap[id] || { key: 'other', label: 'Unlinked', colour: '#6B7A8C' };

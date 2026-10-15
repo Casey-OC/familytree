@@ -3,12 +3,12 @@
 
 import type { Draft } from 'immer';
 import { commit, getData, useData } from './store';
-import { setUi, toast, ui, type FactForm, type Section } from './ui';
+import { setUi, toast, ui, type FactForm, type ProfileTab, type Section } from './ui';
 import { newId } from './platform';
 import * as platform from './platform';
 import { treeApi } from '../lib/family';
 import { normaliseDate, todayLabel, yearOf } from '../lib/dates';
-import type { Fact, Hint, Media, Person, Place, Task, TreeData } from '../lib/types';
+import type { Fact, Hint, Media, Person, PhotoCrop, Place, TagStatus, Task, TreeData } from '../lib/types';
 import type { SqlLog } from './repo';
 
 const T = () => treeApi(getData());
@@ -28,6 +28,25 @@ export function go(section: Section) {
   const u = ui();
   setUi({ section, menu: null, searchOpen: false, ctx: null, panel: u.pinned ? u.panel : null, form: u.pinned ? u.form : null });
   if (section === 'tree') centreOn(u.treeView === 'family' ? T().rootId : u.focus || T().rootId);
+}
+
+/** Opens someone's full profile page. */
+export function openProfile(pid: string, tab: ProfileTab = 'overview') {
+  if (!getData().people.some((p) => p.id === pid)) return;
+  const u = ui();
+  setUi({
+    section: 'profile',
+    profilePid: pid,
+    profileTab: tab,
+    profileBack: u.section === 'profile' ? u.profileBack : u.section,
+    panel: null,
+    form: null,
+    menu: null,
+    searchOpen: false,
+    ctx: null,
+    focus: pid,
+  });
+  (document.querySelector('#main') as HTMLElement | null)?.scrollTo?.({ top: 0 });
 }
 
 export function centreOn(pid: string) {
@@ -104,6 +123,10 @@ export async function savePerson(f: Extract<NonNullable<ReturnType<typeof ui>['m
         sex: f.sex,
         living: !!f.living,
         photoMediaId: null,
+        photoCrop: null,
+        coverMediaId: null,
+        profileId: id,
+        accountEmail: '',
         avatar: '',
         privacy: f.living ? 'Private' : 'Shared',
         notes: '',
@@ -506,13 +529,26 @@ export async function addMediaFromPicked(picked: platform.PickedFile, meta: { ti
     originalName: file.originalName,
     sizeBytes: file.sizeBytes,
     faces: [],
-    people: meta.forPid && file.kind !== 'photo' ? [meta.forPid] : [],
+    people: meta.forPid ? [meta.forPid] : [],
     sourceIds: meta.forSource ? [meta.forSource] : [],
     createdAt: new Date().toISOString(),
+    addedBy: useData.getState().account?.name || useData.getState().prefs.ownerName || '',
+    tags: {},
   };
   const ok = await safe(() =>
     commit((d, sql) => {
       m.placeId = ensurePlace(d, sql, meta.place);
+      const who = meta.forPid ? d.people.find((pp) => pp.id === meta.forPid) : undefined;
+      if (who) {
+        m.tags[who.id] = { status: newTagStatus(who), by: m.addedBy };
+        // First photo of someone becomes their profile photo
+        if (m.kind === 'photo' && m.file && !who.photoMediaId && m.tags[who.id].status === 'shown') {
+          who.photoMediaId = m.id;
+          who.photoCrop = null;
+          who.avatar = '';
+          sql.person(who as Person);
+        }
+      }
       d.media.unshift(m);
       sql.media(m);
     }),
@@ -543,9 +579,23 @@ async function editMedia(id: string, fn: (m: Draft<Media>, d: Draft<TreeData>, s
   );
 }
 
+/** Who "I" am when tagging, and whether a tag needs the tagged person's OK first. */
+function me() {
+  const { account, prefs } = useData.getState();
+  return { name: account?.name || prefs.ownerName || '', email: account?.email || '' };
+}
+/** Tags of account holders other than you wait for their approval; everything else shows straight away. */
+export function newTagStatus(p: Pick<Person, 'accountEmail'> | undefined): TagStatus {
+  const { email } = me();
+  return p?.accountEmail && p.accountEmail !== email ? 'pending' : 'shown';
+}
+
 export async function tagFace(mediaId: string, personId: string, x: number, y: number) {
+  let status = 'shown' as TagStatus;
   const ok = await editMedia(mediaId, (m, d, sql) => {
     m.faces.push({ personId, x, y });
+    status = newTagStatus(d.people.find((pp) => pp.id === personId));
+    m.tags[personId] = { status, by: me().name };
     m.people = m.people.filter((p) => p !== personId);
     const p = d.people.find((pp) => pp.id === personId);
     if (p && !p.photoMediaId && !p.avatar && m.file) {
@@ -553,7 +603,7 @@ export async function tagFace(mediaId: string, personId: string, x: number, y: n
       sql.person(p as Person);
     }
   });
-  if (ok) toast(`Tagged ${T().short(personId)} — the photo now shows on their profile`);
+  if (ok) toast(status === 'pending' ? `Tagged ${T().short(personId)} — it shows on their profile once they approve it` : `Tagged ${T().short(personId)} — the photo now shows on their profile`);
 }
 
 export async function removeFace(mediaId: string, index: number) {
@@ -568,10 +618,39 @@ export async function removeFace(mediaId: string, index: number) {
 }
 
 export async function linkMediaPerson(mediaId: string, personId: string, on: boolean) {
-  await editMedia(mediaId, (m) => {
+  await editMedia(mediaId, (m, d) => {
     m.people = m.people.filter((p) => p !== personId);
-    if (on) m.people.push(personId);
+    if (on) {
+      m.people.push(personId);
+      if (!m.tags[personId]) m.tags[personId] = { status: newTagStatus(d.people.find((pp) => pp.id === personId)), by: me().name };
+    }
   });
+}
+
+/** Approve, hide or show a photo on someone's profile. */
+export async function setTagStatus(mediaId: string, personId: string, status: TagStatus) {
+  const ok = await editMedia(mediaId, (m, d, sql) => {
+    m.tags[personId] = { status, by: m.tags[personId]?.by || '' };
+    if (status !== 'shown') {
+      const p = d.people.find((pp) => pp.id === personId);
+      if (p && (p.photoMediaId === m.id || p.coverMediaId === m.id)) {
+        if (p.photoMediaId === m.id) p.photoMediaId = null;
+        if (p.coverMediaId === m.id) p.coverMediaId = null;
+        sql.person(p as Person);
+      }
+    }
+  });
+  if (ok) toast(status === 'shown' ? 'Now showing on the profile' : status === 'hidden' ? 'Hidden from the profile' : 'Waiting for approval');
+}
+
+export async function setCoverPhoto(pid: string, mediaId: string | null) {
+  const ok = await updatePerson(pid, { coverMediaId: mediaId });
+  if (ok) toast(mediaId ? 'Cover photo updated' : 'Cover photo removed');
+}
+
+export async function setPhotoCrop(pid: string, crop: PhotoCrop | null) {
+  const ok = await updatePerson(pid, { photoCrop: crop });
+  if (ok) toast('Profile photo adjusted');
 }
 
 export async function linkMediaSource(mediaId: string, sourceId: string, on = true) {
@@ -592,7 +671,7 @@ export async function updateMedia(id: string, patch: { title?: string; date?: st
 }
 
 export async function setProfilePhoto(pid: string, mediaId: string | null) {
-  const ok = await updatePerson(pid, { photoMediaId: mediaId, avatar: mediaId ? '' : T().person[pid]?.avatar || '' });
+  const ok = await updatePerson(pid, { photoMediaId: mediaId, photoCrop: null, avatar: mediaId ? '' : T().person[pid]?.avatar || '' });
   if (ok) toast(mediaId ? 'Profile photo updated' : 'Profile photo removed');
 }
 
@@ -602,8 +681,9 @@ export async function deleteMedia(id: string) {
   const ok = await safe(() =>
     commit((d, sql) => {
       d.people.forEach((p) => {
-        if (p.photoMediaId === id) {
-          p.photoMediaId = null;
+        if (p.photoMediaId === id || p.coverMediaId === id) {
+          if (p.photoMediaId === id) p.photoMediaId = null;
+          if (p.coverMediaId === id) p.coverMediaId = null;
           sql.person(p as Person);
         }
       });

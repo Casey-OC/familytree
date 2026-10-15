@@ -11,6 +11,7 @@ import { THEMES } from '../lib/themes';
 import { GeocodeAllModal } from './map/Geocode';
 import { EncryptModal } from './security/Security';
 import { ChangePasswordModal } from './account/Account';
+import { AdjustPhotoModal, ChoosePhotoModal } from './profile/PhotoModals';
 
 export function Modals() {
   const modal = useUi((s) => s.modal);
@@ -41,6 +42,10 @@ export function Modals() {
       return <EncryptModal on={modal.on} close={close} />;
     case 'geocodeAll':
       return <GeocodeAllModal close={close} />;
+    case 'adjustPhoto':
+      return <AdjustPhotoModal pid={modal.pid} close={close} />;
+    case 'choosePhoto':
+      return <ChoosePhotoModal pid={modal.pid} purpose={modal.purpose} close={close} />;
     case 'comingSoon':
       return (
         <ModalFrame label={modal.title} onClose={close}>

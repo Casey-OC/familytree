@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { ProfilePage } from './profile/ProfilePage';
 import { useData, openTree } from '../data/store';
 import { setUi, useUi, type Section } from '../data/ui';
-import { addRelModal, closePanel, go, openMedia, openPerson, openPlace, openSource } from '../data/actions';
+import { addRelModal, closePanel, go, openMedia, openPerson, openPlace, openProfile, openSource } from '../data/actions';
 import { treeApi } from '../lib/family';
 import { Icon } from '../components/ui';
 import { searchTree } from '../lib/search';
@@ -93,6 +94,11 @@ export function Shell() {
           {section === 'charts' && <Charts />}
           {section === 'research' && <Research />}
           {section === 'settings' && <Settings />}
+          {section === 'profile' && (
+            <div className="view">
+              <ProfilePage />
+            </div>
+          )}
           <DetailPanel />
         </main>
       </div>
@@ -272,6 +278,11 @@ function TopBar() {
             <button className="dd-item row" onClick={() => setUi({ menu: null, modal: { kind: 'shortcuts' } })}>
               Keyboard shortcuts
             </button>
+            {data.settings.self_person && T.person[data.settings.self_person] && (
+              <button className="dd-item row" onClick={() => openProfile(data.settings.self_person)}>
+                My profile
+              </button>
+            )}
             <button className="dd-item row" onClick={() => setUi({ menu: null, section: 'settings', stab: 'account', panel: null })}>
               Account
             </button>

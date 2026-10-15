@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
-export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings';
+export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile';
+export type ProfileTab = 'overview' | 'photos' | 'family' | 'life' | 'sources';
 export type Screen = 'loading' | 'auth' | 'recovery' | 'about' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
 export type PersonTab = 'facts' | 'relationships' | 'media' | 'notes' | 'sources' | 'research';
@@ -38,7 +39,10 @@ export type Modal =
   | { kind: 'comingSoon'; title: string; body: string }
   | { kind: 'changePassword' }
   | { kind: 'encrypt'; on: boolean }
-  | { kind: 'geocodeAll' };
+  | { kind: 'geocodeAll' }
+  | { kind: 'adjustPhoto'; pid: string }
+  | { kind: 'choosePhoto'; pid: string; purpose: 'profile' | 'cover' }
+  | { kind: 'merge'; keep: string; other: string };
 
 export interface UiState {
   screen: Screen;
@@ -74,11 +78,17 @@ export interface UiState {
   online: boolean;
   fitRequest: number; // bump to ask the tree to fit/centre
   centreRequest: { pid: string; n: number } | null;
+  profilePid: string;
+  profileTab: ProfileTab;
+  profileBack: Section;
 }
 
 export const initialUi = (): UiState => ({
   screen: 'loading',
   section: 'home',
+  profilePid: '',
+  profileTab: 'overview',
+  profileBack: 'home',
   panel: null,
   pinned: false,
   ptab: 'facts',

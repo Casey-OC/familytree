@@ -8,6 +8,7 @@ import {
   openMedia,
   openPerson,
   openPlace,
+  openProfile,
   openSource,
   removeRelationship,
   setNotes,
@@ -42,7 +43,9 @@ export function PersonPanel({ pid }: { pid: string }) {
   return (
     <div className="pbody">
       <div className="phead">
-        <Avatar pid={pid} size="lg" />
+        <button className="av-btn" onClick={() => openProfile(pid)} aria-label={`Open ${T.nm(pid)}’s profile page`} title="Open profile page">
+          <Avatar pid={pid} size="lg" />
+        </button>
         <div style={{ minWidth: 0 }}>
           <h2 className="pname">{T.nm(pid)}</h2>
           <div className="muted strong">{T.years(pid)}</div>
@@ -54,6 +57,10 @@ export function PersonPanel({ pid }: { pid: string }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn sm primary" onClick={() => openProfile(pid)}>
+          <Icon name="people" sm />
+          Open profile
+        </button>
         <button
           className="btn sm"
           onClick={() => {

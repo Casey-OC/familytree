@@ -47,4 +47,30 @@ describe('saving and loading a tree', () => {
     expect(back.rels.some((r) => r.a === 'p9' || r.b === 'p9')).toBe(false);
     expect(back.tasks.find((t) => t.id === 't1')!.personId).toBe('');
   });
+  it('keeps profile framing, cover photo and photo tag approval', async () => {
+    const db = await newSqlJsDb();
+    await migrate(db);
+    const d = sampleTree();
+    const p = d.people.find((x) => x.id === 'p12')!;
+    p.photoMediaId = 'm13';
+    p.photoCrop = { x: 40, y: 30, z: 2.2 };
+    p.coverMediaId = 'm15';
+    p.accountEmail = 'jack@example.com';
+    const m = d.media.find((x) => x.id === 'm15')!;
+    m.addedBy = 'Casey';
+    m.tags = { p12: { status: 'pending', by: 'Robyn' }, p13: { status: 'hidden', by: '' }, nobody: { status: 'shown', by: '' } };
+    const sql = new SqlLog(false);
+    sql.all(d);
+    await db.batch(sql.stmts);
+    const back = await loadTree(db);
+    const bp = back.people.find((x) => x.id === 'p12')!;
+    expect(bp.photoCrop).toEqual({ x: 40, y: 30, z: 2.2 });
+    expect(bp.coverMediaId).toBe('m15');
+    expect(bp.profileId).toBe('p12');
+    expect(bp.accountEmail).toBe('jack@example.com');
+    const bm = back.media.find((x) => x.id === 'm15')!;
+    expect(bm.addedBy).toBe('Casey');
+    // tags are only kept for people actually in the photo
+    expect(bm.tags).toEqual({ p12: { status: 'pending', by: 'Robyn' }, p13: { status: 'hidden', by: '' } });
+  });
 });

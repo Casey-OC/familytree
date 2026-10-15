@@ -52,19 +52,27 @@ export function aboutYouProblem(a: AboutYou): string {
 export function makeSelfTree(a: AboutYou, email: string, newId: () => string): { data: TreeData; selfId: string } {
   const now = new Date().toISOString();
   const d = emptyTree();
-  const person = (given: string, surname: string, sex: Sex, living: boolean): Person => ({
-    id: newId(),
-    given: given.trim(),
-    surname: surname.trim(),
-    sex,
-    living,
-    photoMediaId: null,
-    avatar: '',
-    privacy: living ? 'Private' : 'Shared',
-    notes: '',
-    updatedAt: now,
-  });
+  const person = (given: string, surname: string, sex: Sex, living: boolean): Person => {
+    const id = newId();
+    return {
+      id,
+      given: given.trim(),
+      surname: surname.trim(),
+      sex,
+      living,
+      photoMediaId: null,
+      photoCrop: null,
+      coverMediaId: null,
+      profileId: id,
+      accountEmail: '',
+      avatar: '',
+      privacy: living ? 'Private' : 'Shared',
+      notes: '',
+      updatedAt: now,
+    };
+  };
   const self = person(a.given, a.surname, a.sex, true);
+  self.accountEmail = email;
   d.people.push(self);
 
   // You are the evidence for your own details.

@@ -16,6 +16,10 @@ export interface Person {
   sex: Sex;
   living: boolean;
   photoMediaId: string | null; // chosen profile photo (a real media item)
+  photoCrop: PhotoCrop | null; // how the profile photo is framed in its circle
+  coverMediaId: string | null; // wide photo across the top of the profile page
+  profileId: string; // permanent identity: kept when duplicates are merged, used to link the one profile online
+  accountEmail: string; // set when this person is an account holder (their own profile)
   avatar: string; // sample-tree illustration style ('photo', 'photo t2') or ''
   privacy: 'Private' | 'Shared';
   notes: string;
@@ -62,6 +66,19 @@ export interface Citation {
   extract: string;
 }
 
+/** Framing for a profile photo: the point to centre on (percent of the photo) and how far to zoom in. */
+export interface PhotoCrop {
+  x: number;
+  y: number;
+  z: number; // 1 = whole photo fills the circle
+}
+
+export type TagStatus = 'pending' | 'shown' | 'hidden';
+export interface TagInfo {
+  status: TagStatus;
+  by: string; // who tagged them (name), '' = whoever added the photo
+}
+
 export interface Face {
   personId: string;
   x: number; // percent of width
@@ -86,6 +103,8 @@ export interface Media {
   people: string[]; // people linked without a face tag
   sourceIds: string[];
   createdAt: string;
+  addedBy: string; // name of the account that added it ('' for older items)
+  tags: Record<string, TagInfo>; // per tagged person; missing = shown
 }
 
 export interface Place {
