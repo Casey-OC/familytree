@@ -1,6 +1,6 @@
 # Build status
 
-Updated 15 Oct 2026 (v0.5.0).
+Updated 15 Oct 2026 (v0.6.0).
 
 ## Done
 
@@ -33,6 +33,14 @@ Updated 15 Oct 2026 (v0.5.0).
 - Visibility (Casey's decision): close family (parents, children, siblings, partners, grandparents, grandchildren) see your profile; distant relatives need an invite. `src/lib/profile.ts`. Enforced online when the Family Wall arrives.
 - Duplicates (Casey's decision): living people with accounts are never duplicated; other duplicates must be merged into one profile. `src/lib/merge.ts`: finder (names, nicknames, years, places, parents, partners), merge (facts combined with all sources, photos, links, tasks, hints; backup first), "different people" memory, add-person warning. Each person has a permanent `profile_id`; merged IDs are mapped in the `merged_profiles` setting for cross-tree merging online.
 - Database schema v2 (migrates v0.4 trees automatically, including encrypted ones).
+
+**Life stories, timeline and tree polish**: complete (v0.6.0).
+- Life stories (`src/features/profile/Stories.tsx`, `src/lib/stories.ts`): stories with date, place, linked event, people and photos; shown on every subject's profile and woven into their Timeline; others' stories about an account holder wait for approval. Tables `story`, `story_person`, `story_media`.
+- "Life story" tab renamed "Timeline". Ages on events (`src/lib/ages.ts`).
+- Birth/Death "home at the time" (`fact.home_place_id`): profile, timeline, map, GEDCOM (as RESI), sign-up.
+- Tree cards show profile photos, blue (male) / pink (female) with the M/F mark kept; charts default to the same colours.
+- Casey's decision: gender options are Male and Female only ('U' remains internally for imported records with no sex).
+- Database schema v3.
 
 ## Next
 
