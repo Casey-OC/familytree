@@ -58,7 +58,7 @@ audio.native { width: 100%; }
   .topbar { height: auto; min-height: 56px; padding: 6px 10px; gap: 6px; padding-top: calc(6px + env(safe-area-inset-top)); }
   .ts { width: auto; }
   .ts-btn > span:not(.ts-mark), .ts-btn > svg { display: none; }
-  .topbar .btn.primary .lbl, .syncchip .lbl { display: none; }
+  .topbar .btn.primary .lbl, .syncchip { display: none; }
   .topbar .btn.primary { padding: 0 12px; }
   .search { max-width: none; }
   .search input { height: 40px; }
@@ -84,4 +84,37 @@ audio.native { width: 100%; }
   .modal { padding: 20px; }
   .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .kv { grid-template-columns: 120px minmax(0, 1fr); }
+}
+
+/* printing: charts and the family history book */
+.printroot { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body, #root { height: auto !important; overflow: visible !important; background: #fff !important; }
+  #root { display: none !important; }
+  .printroot { display: block; color: #1d1d1b; font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 11pt; }
+  .printpage { page-break-after: always; break-after: page; position: relative; min-height: 250mm; }
+  .printpage:last-child { page-break-after: auto; break-after: auto; }
+  .printpage svg { width: 100%; height: auto; max-height: 230mm; }
+  .printpage footer { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 9pt; color: #6a6458; }
+  .printpage .ftx { fill: #1d1d1b; }
+  .ph1, .bk-h { font-family: 'Literata', Georgia, serif; font-size: 20pt; font-weight: 600; margin: 0 0 6mm; }
+  .bk-title { text-align: center; padding-top: 70mm; }
+  .bk-title h1 { font-family: 'Literata', Georgia, serif; font-size: 30pt; margin: 0 0 4mm; }
+  .bk-title h2 { font-family: 'Literata', Georgia, serif; font-weight: 400; font-size: 16pt; margin: 0 0 10mm; }
+  .bk-band { height: 4mm; background: repeating-linear-gradient(90deg, #b7862c 0 14px, transparent 14px 20px, #1f4d3a 20px 26px, transparent 26px 32px); margin-bottom: 20mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bk-muted { color: #6a6458; }
+  .bk-table { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
+  .bk-table th, .bk-table td { text-align: left; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #e3d9c4; vertical-align: top; }
+  .bk-table th { white-space: nowrap; width: 1%; }
+  .bk-conf { color: #6a6458; font-size: 9pt; white-space: nowrap; }
+  .bk-note { font-style: italic; color: #4f564c; border-left: 1mm solid #e3d9c4; padding-left: 3mm; }
+  .bk-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .bk-photos figure { margin: 0; }
+  .bk-photos img, .bk-photos .scene { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 2mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bk-photos figcaption { font-size: 9.5pt; margin-top: 1.5mm; }
+  .bk-src li { margin-bottom: 2mm; }
+  .bk-index { columns: 2; column-gap: 8mm; font-size: 10pt; }
+  .bk-index div { break-inside: avoid; margin-bottom: 1mm; }
+  .fanseg, .pbox rect, .printpage rect, .printpage path { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

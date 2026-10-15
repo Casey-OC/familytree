@@ -2,6 +2,7 @@
 // In the real app these go through Tauri. When the interface runs in a plain browser
 // (development preview only) they fall back to in-memory stand-ins.
 
+import { convertFileSrc } from '@tauri-apps/api/core';
 import type { Db } from './db';
 import type { MediaKind } from '../lib/types';
 
@@ -201,15 +202,12 @@ export async function removeMediaFile(treeId: string, file: string): Promise<voi
   } else blobUrls.delete(file);
 }
 
-let convert: ((p: string) => string) | null = null;
-if (isTauri()) tauriCore().then((m) => (convert = m.convertFileSrc));
-
 /** A URL the webview can show for a media file stored with the tree. */
 export function mediaUrl(rel: string): string {
   if (!rel) return '';
   if (!isTauri()) return blobUrls.get(rel) || '';
-  if (!convert || !treeFolder) return '';
-  return convert(treeFolder + sep + rel.split('/').join(sep));
+  if (!treeFolder) return '';
+  return convertFileSrc(treeFolder + sep + rel.split('/').join(sep));
 }
 
 export async function openMediaExternally(rel: string): Promise<void> {

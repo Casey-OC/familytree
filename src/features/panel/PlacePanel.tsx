@@ -48,7 +48,7 @@ export function PlacePanel({ id }: { id: string }) {
               <input value={d.lon} onChange={(e) => setD({ ...d, lon: e.target.value })} placeholder="153.03" inputMode="decimal" />
             </label>
           </div>
-          <span className="fieldnote">Coordinates put this place on the map (Phase 2).</span>
+          <span className="fieldnote">Coordinates put this place on the map.</span>
           <div className="row">
             <button
               className="btn primary"
