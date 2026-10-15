@@ -11,6 +11,7 @@ import { GedcomImport } from './GedcomImport';
 import { SCHEDULES } from './backups';
 import { ThemeGrid } from '../Modals';
 import { SecurityCard } from '../security/Security';
+import { AccountTab } from '../account/Account';
 
 export function Settings() {
   const stab = useUi((s) => s.stab);
@@ -22,6 +23,7 @@ export function Settings() {
           value={stab}
           onChange={(k) => setUi({ stab: k })}
           tabs={[
+            ['account', 'Account'],
             ['gedcom', 'GEDCOM'],
             ['backup', 'Backup & security'],
             ['privacy', 'Privacy'],
@@ -38,6 +40,7 @@ export function Settings() {
             <GedcomExport />
           </div>
         )}
+        {stab === 'account' && <AccountTab />}
         {stab === 'backup' && <BackupTab />}
         {stab === 'privacy' && <PrivacyTab />}
         {stab === 'appearance' && <AppearanceTab />}

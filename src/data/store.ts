@@ -17,6 +17,7 @@ export interface TreeEntry {
   people: number;
   lastOpened: string;
   sample?: boolean;
+  owner?: string; // account id
 }
 
 export interface Prefs {
@@ -27,7 +28,9 @@ export interface Prefs {
   trees: TreeEntry[];
   lastTree: string;
   recent: Record<string, string[]>; // per tree: recently opened people
-  lock: import('../lib/password').Verifier | null; // app password (never the password itself)
+  lock: import('../lib/password').Verifier | null; // old (v0.3) app password, only used to move into an account
+  accounts: import('../lib/accounts').Account[];
+  session: string; // account id kept signed in on this computer, or ''
 }
 
 export const defaultPrefs = (): Prefs => ({
@@ -39,6 +42,8 @@ export const defaultPrefs = (): Prefs => ({
   lastTree: '',
   recent: {},
   lock: null,
+  accounts: [],
+  session: '',
 });
 
 interface DataState {
@@ -48,6 +53,8 @@ interface DataState {
   prefs: Prefs;
   prefsLoaded: boolean;
   busy: string;
+  account: import('../lib/accounts').Account | null; // who is signed in
+  hasKey: boolean; // whether this session knows the password (needed to open encrypted trees)
 }
 
 export const useData = create<DataState>(() => ({
@@ -57,7 +64,22 @@ export const useData = create<DataState>(() => ({
   prefs: defaultPrefs(),
   prefsLoaded: false,
   busy: '',
+  account: null,
+  hasKey: false,
 }));
+
+/** Trees that belong to whoever is signed in. */
+export function myTrees(prefs: Prefs, account: { id: string } | null) {
+  return prefs.trees.filter((t) => !account || t.owner === account.id);
+}
+
+export function updateAccount(patch: Partial<import('../lib/accounts').Account>) {
+  const { account, prefs } = useData.getState();
+  if (!account) return;
+  const next = { ...account, ...patch };
+  useData.setState({ account: next });
+  setPrefs({ accounts: prefs.accounts.map((a) => (a.id === next.id ? next : a)) });
+}
 
 export const getData = () => useData.getState().data;
 
@@ -120,16 +142,17 @@ export async function openTree(id: string): Promise<TreeData> {
     await migrate(opened.db);
     const data = await loadTree(opened.db);
     useData.setState({ treeId: id, db: opened.db, data });
-    const { prefs } = useData.getState();
+    const { prefs, account } = useData.getState();
     const now = new Date().toISOString();
     const name = data.settings.tree_name || 'Family tree';
     const exists = prefs.trees.some((t) => t.id === id);
     setPrefs({
       lastTree: id,
       trees: exists
-        ? prefs.trees.map((t) => (t.id === id ? { ...t, name, people: data.people.length, lastOpened: now } : t))
-        : [...prefs.trees, { id, name, people: data.people.length, lastOpened: now, sample: data.settings.is_sample === '1' }],
+        ? prefs.trees.map((t) => (t.id === id ? { ...t, name, people: data.people.length, lastOpened: now, owner: t.owner || account?.id } : t))
+        : [...prefs.trees, { id, name, people: data.people.length, lastOpened: now, sample: data.settings.is_sample === '1', owner: account?.id }],
     });
+    if (account && account.lastTree !== id) updateAccount({ lastTree: id });
     platform.setWindowTitle(`${name} — Family Tree`);
     return data;
   } finally {

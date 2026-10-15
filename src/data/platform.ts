@@ -378,3 +378,49 @@ export async function mapCacheClear(): Promise<void> {
   const { invoke } = await tauriCore();
   await invoke('map_cache_clear');
 }
+
+// ---------- "keep me signed in" ----------
+const PREVIEW_KEYS = 'familytree.previewKeys'; // browser preview only
+
+/** Saves the account key in the computer's secure store. Returns false if that isn't available. */
+export async function keychainSet(account: string, secret: string): Promise<boolean> {
+  if (isTauri()) {
+    const { invoke } = await tauriCore();
+    return invoke<boolean>('keychain_set', { account, secret });
+  }
+  try {
+    const all = JSON.parse(sessionStorage.getItem(PREVIEW_KEYS) || '{}');
+    all[account] = secret;
+    sessionStorage.setItem(PREVIEW_KEYS, JSON.stringify(all));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function keychainGet(account: string): Promise<string | null> {
+  if (isTauri()) {
+    const { invoke } = await tauriCore();
+    return invoke<string | null>('keychain_get', { account });
+  }
+  try {
+    return JSON.parse(sessionStorage.getItem(PREVIEW_KEYS) || '{}')[account] || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function keychainDelete(account: string): Promise<void> {
+  if (isTauri()) {
+    const { invoke } = await tauriCore();
+    await invoke('keychain_delete', { account });
+    return;
+  }
+  try {
+    const all = JSON.parse(sessionStorage.getItem(PREVIEW_KEYS) || '{}');
+    delete all[account];
+    sessionStorage.setItem(PREVIEW_KEYS, JSON.stringify(all));
+  } catch {
+    /* preview only */
+  }
+}

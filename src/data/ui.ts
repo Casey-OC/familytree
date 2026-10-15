@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
 export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings';
-export type Screen = 'loading' | 'locked' | 'first' | 'empty' | 'import' | 'app';
+export type Screen = 'loading' | 'auth' | 'recovery' | 'about' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
 export type PersonTab = 'facts' | 'relationships' | 'media' | 'notes' | 'sources' | 'research';
 
@@ -36,9 +36,7 @@ export type Modal =
   | { kind: 'renameTree'; name: string }
   | { kind: 'shortcuts' }
   | { kind: 'comingSoon'; title: string; body: string }
-  | { kind: 'setPassword' }
   | { kind: 'changePassword' }
-  | { kind: 'removePassword' }
   | { kind: 'encrypt'; on: boolean }
   | { kind: 'geocodeAll' };
 
@@ -72,7 +70,7 @@ export interface UiState {
   tfilter: 'open' | 'To do' | 'In progress' | 'Done' | 'all';
   hintSel: string;
   taskOpen: string | null;
-  stab: 'gedcom' | 'sync' | 'backup' | 'privacy' | 'appearance';
+  stab: 'account' | 'gedcom' | 'sync' | 'backup' | 'privacy' | 'appearance';
   online: boolean;
   fitRequest: number; // bump to ask the tree to fit/centre
   centreRequest: { pid: string; n: number } | null;

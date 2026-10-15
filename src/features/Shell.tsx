@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useData, closeTree, openTree } from '../data/store';
+import { useData, openTree } from '../data/store';
 import { setUi, useUi, type Section } from '../data/ui';
 import { addRelModal, closePanel, go, openMedia, openPerson, openPlace, openSource } from '../data/actions';
 import { treeApi } from '../lib/family';
@@ -143,15 +143,16 @@ function TopBar() {
   const data = useData((s) => s.data);
   const prefs = useData((s) => s.prefs);
   const treeId = useData((s) => s.treeId);
+  const account = useData((s) => s.account);
   const menu = useUi((s) => s.menu);
   const online = useUi((s) => s.online);
   const panel = useUi((s) => s.panel);
   const T = treeApi(data);
-  const owner = prefs.ownerName.trim();
+  const owner = (account?.name || prefs.ownerName).trim();
   const ownerIni = owner ? owner.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() : '';
   const pendingHints = data.hints.filter((h) => h.status === 'pending').length;
   const unv = useMemo(() => data.facts.filter((f) => T.conf(f) === 'Unverified').length, [data]);
-  const otherTrees = prefs.trees.filter((t) => t.id !== treeId).sort((a, b) => b.lastOpened.localeCompare(a.lastOpened));
+  const otherTrees = prefs.trees.filter((t) => t.id !== treeId && (!account || t.owner === account.id)).sort((a, b) => b.lastOpened.localeCompare(a.lastOpened));
   const notes: { t: string; s: string; go: () => void }[] = [];
   if (pendingHints) notes.push({ t: `${pendingHints} record hint${pendingHints > 1 ? 's' : ''} to review`, s: 'Research · record hints', go: () => setUi({ section: 'research', rtab: 'hints', menu: null }) });
   if (unv) notes.push({ t: `${unv} unverified fact${unv > 1 ? 's' : ''}`, s: 'Attach evidence or create a research task', go: () => setUi({ section: 'research', rtab: 'unv', menu: null }) });
@@ -199,17 +200,22 @@ function TopBar() {
               <Icon name="edit" sm />
               Rename this tree…
             </button>
-            <button
-              className="dd-item row"
-              onClick={async () => {
-                setUi({ menu: null, panel: null });
-                await closeTree();
-                setUi({ screen: 'first' });
-              }}
-            >
-              <Icon name="plus" sm />
-              New tree or import…
+            <button className="dd-item row" onClick={() => setUi({ menu: null, panel: null, screen: 'import' })}>
+              <Icon name="download" sm />
+              Import a GEDCOM file as a new tree…
             </button>
+            {!prefs.trees.some((t) => t.sample && (!account || t.owner === account.id) && t.id === treeId) && (
+              <button
+                className="dd-item row"
+                onClick={async () => {
+                  setUi({ menu: null, panel: null });
+                  (await import('./FirstRun')).openSample();
+                }}
+              >
+                <Icon name="tree" sm />
+                Explore the sample tree
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -266,15 +272,17 @@ function TopBar() {
             <button className="dd-item row" onClick={() => setUi({ menu: null, modal: { kind: 'shortcuts' } })}>
               Keyboard shortcuts
             </button>
+            <button className="dd-item row" onClick={() => setUi({ menu: null, section: 'settings', stab: 'account', panel: null })}>
+              Account
+            </button>
             <button
               className="dd-item row"
               onClick={async () => {
-                setUi({ menu: null, panel: null });
-                await closeTree();
-                setUi({ screen: 'first' });
+                setUi({ menu: null });
+                (await import('./account/Account')).signOut();
               }}
             >
-              Start screen
+              Sign out
             </button>
           </div>
         )}

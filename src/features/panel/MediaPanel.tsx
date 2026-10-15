@@ -1,3 +1,4 @@
+import { DateInput } from '../../components/DateInput';
 import { useEffect, useRef, useState } from 'react';
 import { useData } from '../../data/store';
 import { setUi, useUi } from '../../data/ui';
@@ -130,7 +131,7 @@ export function MediaPanel({ mid }: { mid: string }) {
           <div className="frow">
             <label className="fl">
               Date
-              <input value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} placeholder="e.g. 1955" />
+              <DateInput value={draft.date} onChange={(v) => setDraft({ ...draft, date: v })} placeholder="e.g. 1955" label="date" />
             </label>
             <label className="fl">
               Place
