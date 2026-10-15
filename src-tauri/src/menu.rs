@@ -30,6 +30,7 @@ pub fn install(app: &mut App) -> tauri::Result<()> {
         .item(&item(&h, "export-gedcom", "Export GEDCOM…", Some("CmdOrCtrl+E"))?)
         .separator()
         .item(&item(&h, "backup-now", "Back up now", Some("CmdOrCtrl+B"))?)
+        .item(&item(&h, "lock", "Lock now", Some("CmdOrCtrl+L"))?)
         .separator()
         .close_window()
         .build()?;

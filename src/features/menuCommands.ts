@@ -83,6 +83,9 @@ export async function handleMenu(id: string) {
         setUi((s) => ({ fitRequest: s.fitRequest + 1 }));
       });
       break;
+    case 'lock':
+      (await import('./security/Security')).lockNow();
+      break;
     case 'shortcuts':
       setUi({ modal: { kind: 'shortcuts' } });
       break;

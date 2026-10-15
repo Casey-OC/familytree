@@ -62,3 +62,13 @@ describe('sample tree', () => {
     expect(g.map((x) => x.label)).toEqual(['People', 'Places', 'Sources', 'Media']);
   });
 });
+
+import { checkPassword, makeVerifier } from '../lib/password';
+describe('app password', () => {
+  it('verifies the right password only', async () => {
+    const v = await makeVerifier('correct horse', 1000);
+    expect(await checkPassword('correct horse', v)).toBe(true);
+    expect(await checkPassword('Correct horse', v)).toBe(false);
+    expect(v.hash).not.toContain('correct');
+  });
+});

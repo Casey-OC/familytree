@@ -10,6 +10,7 @@ import { Icon, Seg, Switch, Tabs, fmtBytes } from '../../components/ui';
 import { GedcomImport } from './GedcomImport';
 import { SCHEDULES } from './backups';
 import { ThemeGrid } from '../Modals';
+import { SecurityCard } from '../security/Security';
 
 export function Settings() {
   const stab = useUi((s) => s.stab);
@@ -205,28 +206,7 @@ function BackupTab() {
           The newest 20 backups are kept, including your photos and documents.
         </p>
       </section>
-      <section className="card">
-        <h2 className="h2" style={{ marginBottom: 8 }}>
-          Security
-        </h2>
-        <div className="toggle">
-          <span style={{ flex: 1 }}>
-            <span className="li-t">App password lock</span>
-            <span className="li-s">Ask for a password when the app opens · coming in Phase 2</span>
-          </span>
-          <Switch on={false} onToggle={() => {}} label="App password lock" disabled />
-        </div>
-        <div className="toggle">
-          <span style={{ flex: 1 }}>
-            <span className="li-t">Encrypt the tree file</span>
-            <span className="li-s">Protects living people’s details if this computer is lost · coming in Phase 2</span>
-          </span>
-          <Switch on={false} onToggle={() => {}} label="Encryption" disabled />
-        </div>
-        <button className="btn ghost" style={{ marginTop: 10 }} onClick={async () => toast('Your trees are saved in: ' + (await platform.revealDataFolder()))}>
-          Show where my trees are saved
-        </button>
-      </section>
+      <SecurityCard />
     </div>
   );
 }

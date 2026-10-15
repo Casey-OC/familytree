@@ -27,6 +27,7 @@ export interface Prefs {
   trees: TreeEntry[];
   lastTree: string;
   recent: Record<string, string[]>; // per tree: recently opened people
+  lock: import('../lib/password').Verifier | null; // app password (never the password itself)
 }
 
 export const defaultPrefs = (): Prefs => ({
@@ -37,6 +38,7 @@ export const defaultPrefs = (): Prefs => ({
   trees: [],
   lastTree: '',
   recent: {},
+  lock: null,
 });
 
 interface DataState {
