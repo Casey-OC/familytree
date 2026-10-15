@@ -10,7 +10,7 @@ import { findDuplicatePeople, mergeProblem, norm, type DuplicatePair, type Field
 import { Avatar, Icon, ModalFrame } from '../../components/ui';
 
 const likelihood = (score: number) => (score >= 85 ? 'Very likely the same person' : score >= 70 ? 'Likely the same person' : 'Possibly the same person');
-const sexLabel = { M: 'Male', F: 'Female', X: 'Another gender', U: 'Not recorded' } as const;
+const sexLabel = { M: 'Male', F: 'Female', X: 'Not recorded', U: 'Not recorded' } as const;
 
 function Summary({ T, pid }: { T: TreeApi; pid: string }) {
   const p = T.person[pid];

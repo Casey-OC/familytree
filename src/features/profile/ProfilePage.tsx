@@ -10,6 +10,8 @@ import { treeApi, type TreeApi } from '../../lib/family';
 import { dateLabel } from '../../lib/dates';
 import { closeFamily, visibilityLine, type CloseRelation } from '../../lib/profile';
 import { findDuplicatePeople } from '../../lib/merge';
+import { storiesAbout } from '../../lib/stories';
+import { StoriesTab, StoryCard, TimelineTab } from './Stories';
 import type { Media, Person } from '../../lib/types';
 import { Avatar, Conf, Icon } from '../../components/ui';
 import { MediaThumb } from '../media/MediaThumb';
@@ -52,11 +54,14 @@ export function ProfilePage() {
   const birth = T.ff(pid, 'Birth');
   const death = T.ff(pid, 'Death');
   const lives = [...T.factsOf(pid)].reverse().find((f) => f.type === 'Residence');
+  const stories = storiesAbout(data, pid);
+  const pendingStories = storiesAbout(data, pid, 'pending');
   const tabs: [ProfileTab, string][] = [
     ['overview', 'Overview'],
+    ['timeline', 'Timeline'],
+    ['stories', `Life stories${stories.length ? ` (${stories.length})` : ''}`],
     ['photos', `Photos${photos.length ? ` (${photos.length})` : ''}`],
     ['family', 'Family'],
-    ['life', 'Life story'],
     ['sources', 'Sources'],
   ];
   const setTab = (t: ProfileTab) => setUi({ profileTab: t });
@@ -183,6 +188,17 @@ export function ProfilePage() {
           </span>
         </div>
       )}
+      {pendingStories.length > 0 && tab !== 'stories' && (
+        <div className="privacy-note" role="status">
+          <Icon name="bell" />
+          <span>
+            {pendingStories.length} {pendingStories.length === 1 ? 'story' : 'stories'} about {isSelf ? 'you' : T.first(pid)} {pendingStories.length === 1 ? 'is' : 'are'} waiting for approval.{' '}
+            <button className="link" onClick={() => setTab('stories')}>
+              Review
+            </button>
+          </span>
+        </div>
+      )}
 
       {tab === 'overview' && (
         <div className="pf-grid">
@@ -193,7 +209,9 @@ export function ProfilePage() {
               </h2>
               <dl className="pf-about">
                 {birth && <AboutRow label="Born" value={[dateLabel(birth), T.placeName(birth.placeId)].filter(Boolean).join(' · ')} conf={T.conf(birth)} />}
-                {death && <AboutRow label="Died" value={[dateLabel(death), T.placeName(death.placeId)].filter(Boolean).join(' · ')} conf={T.conf(death)} />}
+                {birth?.homePlaceId && <AboutRow label="Home at birth" value={T.placeName(birth.homePlaceId)} />}
+                {death && <AboutRow label="Died" value={[dateLabel(death), T.ageAt(pid, death), T.placeName(death.placeId)].filter(Boolean).join(' · ')} conf={T.conf(death)} />}
+                {death?.homePlaceId && <AboutRow label="Home at death" value={T.placeName(death.homePlaceId)} />}
                 {lives && p.living && <AboutRow label="Lives in" value={T.placeName(lives.placeId) || lives.desc} conf={T.conf(lives)} />}
                 {T.factsOf(pid)
                   .filter((f) => f.type === 'Occupation')
@@ -261,6 +279,33 @@ export function ProfilePage() {
                 </p>
               )}
             </section>
+            <section className="card pf-card" aria-labelledby="pf-stories">
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <h2 className="h3" id="pf-stories">
+                  Life stories
+                </h2>
+                {stories.length > 0 ? (
+                  <button className="link" onClick={() => setTab('stories')}>
+                    See all {stories.length}
+                  </button>
+                ) : (
+                  <button className="btn sm" onClick={() => setUi({ modal: { kind: 'story', pid } })}>
+                    <Icon name="plus" sm />
+                    Write a story
+                  </button>
+                )}
+              </div>
+              {stories.length ? (
+                [...stories]
+                  .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                  .slice(0, 2)
+                  .map((st) => <StoryCard key={st.id} T={T} pid={pid} s={st} canManage={canManage} compact />)
+              ) : (
+                <p className="small muted" style={{ margin: 0 }}>
+                  No stories yet. Anyone in the family can write one about {isSelf ? 'you' : T.first(pid)}.
+                </p>
+              )}
+            </section>
             <section className="card pf-card" aria-labelledby="pf-fam">
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <h2 className="h3" id="pf-fam">
@@ -278,7 +323,8 @@ export function ProfilePage() {
 
       {tab === 'photos' && <PhotosTab T={T} p={p} canManage={canManage} isSelf={isSelf} all={all} />}
       {tab === 'family' && <FamilyTab T={T} pid={pid} />}
-      {tab === 'life' && <LifeTab T={T} pid={pid} />}
+      {tab === 'timeline' && <TimelineTab T={T} pid={pid} canManage={canManage} />}
+      {tab === 'stories' && <StoriesTab T={T} pid={pid} canManage={canManage} isSelf={isSelf} />}
       {tab === 'sources' && <SourcesTab T={T} pid={pid} />}
     </div>
   );
@@ -505,41 +551,6 @@ function PhotosTab({ T, p, canManage, isSelf, all }: { T: TreeApi; p: Person; ca
         </section>
       )}
     </div>
-  );
-}
-
-function LifeTab({ T, pid }: { T: TreeApi; pid: string }) {
-  const facts = T.factsOf(pid);
-  return (
-    <section className="card pf-card">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2 className="h3">Life story</h2>
-        <button className="btn sm" onClick={() => openPerson(pid)}>
-          <Icon name="edit" sm />
-          Edit facts
-        </button>
-      </div>
-      {facts.length ? (
-        <ol className="pf-life">
-          {facts.map((f) => (
-            <li key={f.id}>
-              <span className="pf-life-date">{dateLabel(f) || 'Date unknown'}</span>
-              <span className="pf-life-body">
-                <span className="strong">{f.type}</span>
-                {f.placeId && <span> · {T.placeName(f.placeId)}</span>}
-                {f.desc && <span className="small"> — {f.desc}</span>}
-                <span className="small muted"> · {f.citeIds.length ? `${f.citeIds.length} source${f.citeIds.length === 1 ? '' : 's'}` : 'No sources yet'}</span>
-              </span>
-              <Conf c={T.conf(f)} />
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="muted" style={{ margin: 0 }}>
-          Nothing here yet.
-        </p>
-      )}
-    </section>
   );
 }
 

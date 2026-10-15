@@ -111,6 +111,7 @@ export function PersonPanel({ pid }: { pid: string }) {
                       <div className="fact-top">
                         <span className="fact-type">{f.type}</span>
                         <span className="fact-date">{dateLabel(f)}</span>
+                        {T.ageAt(pid, f) && <span className="fact-age">{T.ageAt(pid, f)}</span>}
                         <div className="spacer" />
                         <Conf c={c} />
                       </div>
@@ -118,6 +119,14 @@ export function PersonPanel({ pid }: { pid: string }) {
                         <button className="link small" onClick={() => openPlace(f.placeId)}>
                           {T.placeName(f.placeId)}
                         </button>
+                      )}
+                      {f.homePlaceId && (
+                        <div className="small">
+                          {f.type === 'Birth' ? 'Family home: ' : 'Home: '}
+                          <button className="link small" onClick={() => openPlace(f.homePlaceId)}>
+                            {T.placeName(f.homePlaceId)}
+                          </button>
+                        </div>
                       )}
                       {f.desc && <div className="small">{f.desc}</div>}
                       <div className="citeline">

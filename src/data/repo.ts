@@ -2,7 +2,7 @@
 // Every change is written straight away (autosave) inside one transaction.
 
 import type { Db, SqlValue, Stmt } from './db';
-import type { Citation, Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, TagStatus, Task, TreeData } from '../lib/types';
+import type { Citation, Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
 
 const s = (v: SqlValue | undefined) => (v === null || v === undefined ? '' : String(v));
 const n = (v: SqlValue | undefined) => (v === null || v === undefined || v === '' ? null : Number(v));
@@ -19,7 +19,7 @@ function parseCrop(v: string): PhotoCrop | null {
 }
 
 export async function loadTree(db: Db): Promise<TreeData> {
-  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings, mtags] = await Promise.all([
+  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings, mtags, stories, sp, sm] = await Promise.all([
     db.query('SELECT * FROM person'),
     db.query('SELECT * FROM relationship'),
     db.query('SELECT * FROM place'),
@@ -35,6 +35,9 @@ export async function loadTree(db: Db): Promise<TreeData> {
     db.query('SELECT * FROM task ORDER BY created_at DESC'),
     db.query('SELECT * FROM settings'),
     db.query('SELECT * FROM media_tag'),
+    db.query('SELECT * FROM story ORDER BY created_at'),
+    db.query('SELECT * FROM story_person'),
+    db.query('SELECT * FROM story_media ORDER BY pos'),
   ]);
   const citesByFact: Record<string, string[]> = {};
   for (const r of fc) (citesByFact[s(r.fact_id)] = citesByFact[s(r.fact_id)] || []).push(s(r.citation_id));
@@ -47,6 +50,8 @@ export async function loadTree(db: Db): Promise<TreeData> {
   const mpBy = group(mp, 'media_id');
   const msBy = group(ms, 'media_id');
   const tagBy = group(mtags, 'media_id');
+  const spBy = group(sp, 'story_id');
+  const smBy = group(sm, 'story_id');
   const st: Record<string, string> = {};
   for (const r of settings) st[s(r.key)] = s(r.value);
 
@@ -83,6 +88,7 @@ export async function loadTree(db: Db): Promise<TreeData> {
         date2: s(r.date2_text),
         sortYear: n(r.sort_year),
         placeId: s(r.place_id),
+        homePlaceId: s(r.home_place_id),
         desc: s(r.description),
         conf: (r.confidence_override ? s(r.confidence_override) : 'auto') as Fact['conf'],
         citeIds: citesByFact[s(r.id)] || [],
@@ -142,6 +148,23 @@ export async function loadTree(db: Db): Promise<TreeData> {
         priority: s(r.priority) as Task['priority'],
         notes: s(r.notes),
         createdAt: s(r.created_at),
+      }),
+    ),
+    stories: stories.map(
+      (r): Story => ({
+        id: s(r.id),
+        title: s(r.title),
+        body: s(r.body),
+        date: s(r.date_text),
+        sortYear: n(r.sort_year),
+        placeId: s(r.place_id),
+        factId: s(r.fact_id),
+        author: s(r.author),
+        authorEmail: s(r.author_email),
+        people: Object.fromEntries((spBy[s(r.id)] || []).map((x) => [s(x.person_id), (s(x.status) || 'shown') as TagStatus])),
+        mediaIds: (smBy[s(r.id)] || []).map((x) => s(x.media_id)),
+        createdAt: s(r.created_at),
+        updatedAt: s(r.updated_at),
       }),
     ),
     settings: st,
@@ -205,12 +228,13 @@ export class SqlLog {
   }
   fact(f: Fact) {
     this.add(
-      `INSERT INTO fact (id, person_id, type, date_text, date_qualifier, date2_text, sort_year, place_id, description, confidence_override)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO fact (id, person_id, type, date_text, date_qualifier, date2_text, sort_year, place_id, description, confidence_override, home_place_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET person_id=excluded.person_id, type=excluded.type, date_text=excluded.date_text,
          date_qualifier=excluded.date_qualifier, date2_text=excluded.date2_text, sort_year=excluded.sort_year,
-         place_id=excluded.place_id, description=excluded.description, confidence_override=excluded.confidence_override`,
-      [f.id, f.personId, f.type, f.date, f.q, f.date2, f.sortYear, f.placeId || null, f.desc, f.conf === 'auto' ? null : f.conf],
+         place_id=excluded.place_id, description=excluded.description, confidence_override=excluded.confidence_override,
+         home_place_id=excluded.home_place_id`,
+      [f.id, f.personId, f.type, f.date, f.q, f.date2, f.sortYear, f.placeId || null, f.desc, f.conf === 'auto' ? null : f.conf, f.homePlaceId || null],
     );
     this.add('DELETE FROM fact_citation WHERE fact_id = ?', [f.id]);
     f.citeIds.forEach((c, i) => this.add('INSERT OR IGNORE INTO fact_citation (fact_id, citation_id, pos) VALUES (?, ?, ?)', [f.id, c, i]));
@@ -254,10 +278,24 @@ export class SqlLog {
     );
     this.log('task', t.id, 'put');
   }
+  story(x: Story) {
+    this.add(
+      `INSERT INTO story (id, title, body, date_text, sort_year, place_id, fact_id, author, author_email, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, date_text=excluded.date_text, sort_year=excluded.sort_year,
+         place_id=excluded.place_id, fact_id=excluded.fact_id, author=excluded.author, author_email=excluded.author_email, updated_at=excluded.updated_at`,
+      [x.id, x.title, x.body, x.date, x.sortYear, x.placeId || null, x.factId || null, x.author, x.authorEmail, x.createdAt || this.stamp, x.updatedAt || this.stamp],
+    );
+    this.add('DELETE FROM story_person WHERE story_id = ?', [x.id]);
+    this.add('DELETE FROM story_media WHERE story_id = ?', [x.id]);
+    Object.entries(x.people).forEach(([pid, st]) => this.add('INSERT OR IGNORE INTO story_person (story_id, person_id, status) VALUES (?, ?, ?)', [x.id, pid, st]));
+    x.mediaIds.forEach((m, i) => this.add('INSERT OR IGNORE INTO story_media (story_id, media_id, pos) VALUES (?, ?, ?)', [x.id, m, i]));
+    this.log('story', x.id, 'put');
+  }
   setting(key: string, value: string) {
     this.add('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
   }
-  del(table: 'person' | 'relationship' | 'place' | 'fact' | 'source' | 'citation' | 'media' | 'hint' | 'task', id: string) {
+  del(table: 'person' | 'relationship' | 'place' | 'fact' | 'source' | 'citation' | 'media' | 'hint' | 'task' | 'story', id: string) {
     this.add(`DELETE FROM ${table} WHERE id = ?`, [id]);
     this.log(table, id, 'delete');
   }
@@ -273,6 +311,7 @@ export class SqlLog {
     d.media.forEach((x) => this.media(x));
     d.hints.forEach((x) => this.hint(x));
     d.tasks.forEach((x) => this.task(x));
+    (d.stories || []).forEach((x) => this.story(x));
     Object.entries(d.settings).forEach(([k, v]) => this.setting(k, v));
   }
 }

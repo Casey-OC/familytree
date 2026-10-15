@@ -182,7 +182,7 @@ export function buildImport(text: string, fileName: string, sizeBytes: number, e
     if (addr && !desc.includes(addr)) desc = [desc, addr].filter(Boolean).join(' — ');
     const notes = children(ev, 'NOTE').map(noteText).filter(Boolean);
     if (notes.length && !desc) desc = notes.join(' ').slice(0, 300);
-    return { id: uid('f'), personId: pid, type, q: pd.q, date: pd.date, date2: pd.date2, sortYear: yearOf(pd.date), placeId: placeFor(child(ev, 'PLAC')), desc, conf: 'auto', citeIds: citationsFor(ev) };
+    return { id: uid('f'), personId: pid, type, q: pd.q, date: pd.date, date2: pd.date2, sortYear: yearOf(pd.date), placeId: placeFor(child(ev, 'PLAC')), homePlaceId: '', desc, conf: 'auto', citeIds: citationsFor(ev) };
   };
 
   // Media objects (files aren't inside GEDCOM — record them as links)
@@ -263,7 +263,7 @@ export function buildImport(text: string, fileName: string, sizeBytes: number, e
       accountEmail: '',
       given,
       surname,
-      sex: sexRaw === 'M' || sexRaw === 'F' ? sexRaw : sexRaw === 'X' ? 'X' : 'U',
+      sex: sexRaw === 'M' || sexRaw === 'F' ? sexRaw : 'U',
       living: false,
       photoMediaId: null,
       avatar: '',

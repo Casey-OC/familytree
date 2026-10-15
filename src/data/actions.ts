@@ -8,7 +8,8 @@ import { newId } from './platform';
 import * as platform from './platform';
 import { treeApi } from '../lib/family';
 import { normaliseDate, todayLabel, yearOf } from '../lib/dates';
-import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, TagStatus, Task, TreeData } from '../lib/types';
+import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Story, TagStatus, Task, TreeData } from '../lib/types';
+import { HOME_EVENTS } from '../lib/types';
 import { mergeInto, mergeProblem, notDuplicateKey, notDuplicates, type FieldChoice, type MergeResult } from '../lib/merge';
 import type { SqlLog } from './repo';
 
@@ -92,6 +93,21 @@ export async function updatePlace(id: string, patch: Partial<Place>) {
 }
 
 // ---------- people ----------
+/** A sensible starting choice: a second parent is the other sex, a partner usually the opposite one. */
+function guessSex(t: ReturnType<typeof T>, pid: string, rel: string): Person['sex'] {
+  const p = pid ? t.person[pid] : null;
+  if (!p) return 'U';
+  if (rel === 'parent') {
+    const ps = t.parents(pid).map((x) => t.person[x]?.sex);
+    if (ps.includes('M') && !ps.includes('F')) return 'F';
+    if (ps.includes('F') && !ps.includes('M')) return 'M';
+  }
+  if (rel === 'spouse') return p.sex === 'M' ? 'F' : p.sex === 'F' ? 'M' : 'U';
+  return 'U';
+}
+
+export const sexProblem = (sex: string) => (sex === 'M' || sex === 'F' ? '' : 'Choose male or female.');
+
 export function addRelModal(pid: string, rel: 'none' | 'child' | 'parent' | 'spouse' | 'sibling' = pid ? 'child' : 'none') {
   const t = T();
   const p = pid ? t.person[pid] : null;
@@ -105,13 +121,17 @@ export function addRelModal(pid: string, rel: 'none' | 'child' | 'parent' | 'spo
   setUi({
     ctx: null,
     menu: null,
-    modal: { kind: 'add', relTo: pid || '', rel, given: '', surname, sex: rel === 'parent' ? 'U' : 'U', bdate: '', bq: 'exact', bplace: '', living: rel !== 'parent', other: rel === 'child' ? sp[0] || '' : '' },
+    modal: { kind: 'add', relTo: pid || '', rel, given: '', surname, sex: guessSex(t, pid, rel), bdate: '', bq: 'exact', bplace: '', living: rel !== 'parent', other: rel === 'child' ? sp[0] || '' : '' },
   });
 }
 
 export async function savePerson(f: Extract<NonNullable<ReturnType<typeof ui>['modal']>, { kind: 'add' }>) {
   if (!f.given.trim() && !f.surname.trim()) {
     toast('Add a first name to continue');
+    return;
+  }
+  if (sexProblem(f.sex)) {
+    toast(sexProblem(f.sex));
     return;
   }
   const id = newId();
@@ -137,7 +157,7 @@ export async function savePerson(f: Extract<NonNullable<ReturnType<typeof ui>['m
       sql.person(p);
       if (f.bdate.trim()) {
         const date = normaliseDate(f.bdate);
-        const fact: Fact = { id: newId(), personId: id, type: 'Birth', q: f.bq, date, date2: '', sortYear: yearOf(date), placeId: ensurePlace(d, sql, f.bplace), desc: '', conf: 'auto', citeIds: [] };
+        const fact: Fact = { id: newId(), personId: id, type: 'Birth', q: f.bq, date, date2: '', sortYear: yearOf(date), placeId: ensurePlace(d, sql, f.bplace), homePlaceId: '', desc: '', conf: 'auto', citeIds: [] };
         d.facts.push(fact);
         sql.fact(fact);
       }
@@ -249,6 +269,10 @@ export async function deletePerson(pid: string) {
         if (t.personId === pid) t.personId = '';
         if (factIds.has(t.factId)) t.factId = '';
       });
+      d.stories.forEach((s) => {
+        delete s.people[pid];
+        if (factIds.has(s.factId)) s.factId = '';
+      });
       d.media.forEach((m) => {
         if (m.faces.some((f) => f.personId === pid) || m.people.includes(pid)) {
           m.faces = m.faces.filter((f) => f.personId !== pid);
@@ -286,12 +310,12 @@ export function startEdit(f: Fact) {
   setUi({
     panel: { kind: 'person', id: f.personId },
     ptab: 'facts',
-    form: { fid: f.id, pid: f.personId, type: f.type, q: f.q || 'exact', date: f.date, date2: f.date2, place: t.placeName(f.placeId), desc: f.desc, conf: f.conf, cites: [...f.citeIds], newCites: [], newSrc: '', newPage: '', newQual: 'Secondary' },
+    form: { fid: f.id, pid: f.personId, type: f.type, q: f.q || 'exact', date: f.date, date2: f.date2, place: t.placeName(f.placeId), home: t.placeName(f.homePlaceId), desc: f.desc, conf: f.conf, cites: [...f.citeIds], newCites: [], newSrc: '', newPage: '', newQual: 'Secondary' },
   });
 }
 
 export function startAdd(pid: string) {
-  setUi({ ptab: 'facts', form: { fid: null, pid, type: 'Residence', q: 'exact', date: '', date2: '', place: '', desc: '', conf: 'auto', cites: [], newCites: [], newSrc: '', newPage: '', newQual: 'Secondary' } });
+  setUi({ ptab: 'facts', form: { fid: null, pid, type: 'Residence', q: 'exact', date: '', date2: '', place: '', home: '', desc: '', conf: 'auto', cites: [], newCites: [], newSrc: '', newPage: '', newQual: 'Secondary' } });
 }
 
 export async function saveFact(fm: FactForm) {
@@ -302,11 +326,11 @@ export async function saveFact(fm: FactForm) {
     commit((d, sql) => {
       let f = d.facts.find((x) => x.id === id);
       if (!f) {
-        f = { id, personId: fm.pid, type: fm.type, q: 'exact', date: '', date2: '', sortYear: null, placeId: '', desc: '', conf: 'auto', citeIds: [] };
+        f = { id, personId: fm.pid, type: fm.type, q: 'exact', date: '', date2: '', sortYear: null, placeId: '', homePlaceId: '', desc: '', conf: 'auto', citeIds: [] };
         d.facts.push(f);
       }
       const date = normaliseDate(fm.date);
-      Object.assign(f, { type: fm.type, q: fm.q, date, date2: normaliseDate(fm.date2), sortYear: yearOf(date), placeId: ensurePlace(d, sql, fm.place), desc: fm.desc.trim(), conf: fm.conf });
+      Object.assign(f, { type: fm.type, q: fm.q, date, date2: normaliseDate(fm.date2), sortYear: yearOf(date), placeId: ensurePlace(d, sql, fm.place), homePlaceId: HOME_EVENTS[fm.type] ? ensurePlace(d, sql, fm.home || '') : '', desc: fm.desc.trim(), conf: fm.conf });
       f.citeIds = [...fm.cites];
       for (const nc of fm.newCites) {
         const c = { id: newId(), sourceId: nc.sourceId, page: nc.page, accessed: todayLabel(), quality: nc.quality, extract: '' };
@@ -330,6 +354,9 @@ export async function deleteFact(fid: string) {
       d.facts = d.facts.filter((f) => f.id !== fid);
       d.tasks.forEach((t) => {
         if (t.factId === fid) t.factId = '';
+      });
+      d.stories.forEach((s) => {
+        if (s.factId === fid) s.factId = '';
       });
       sql.del('fact', fid);
     }),
@@ -361,7 +388,7 @@ export async function acceptHint(h: Hint) {
           Object.assign(f, { q: pr.q || 'exact', date: pr.date, sortYear: yearOf(pr.date), placeId, desc: pr.desc });
           f.citeIds.push(c.id);
         } else {
-          f = { id: newId(), personId: h.personId, type: pr.type, q: pr.q || 'exact', date: pr.date, date2: '', sortYear: yearOf(pr.date), placeId, desc: pr.desc, conf: 'auto', citeIds: [c.id] };
+          f = { id: newId(), personId: h.personId, type: pr.type, q: pr.q || 'exact', date: pr.date, date2: '', sortYear: yearOf(pr.date), placeId, homePlaceId: '', desc: pr.desc, conf: 'auto', citeIds: [c.id] };
           d.facts.push(f);
         }
         sql.fact(f as Fact);
@@ -753,6 +780,7 @@ export async function mergePeople(keepId: string, otherId: string, choice: Field
       for (const id of r.changedPeople) sql.person(byId(d.people, id) as Person);
       for (const id of r.changedFacts) sql.fact(byId(d.facts, id) as Fact);
       for (const id of r.changedTasks) sql.task(byId(d.tasks, id) as Task);
+      for (const id of r.changedStories) sql.story(byId(d.stories, id) as Story);
       for (const id of r.changedHints) sql.hint(byId(d.hints, id) as Hint);
       for (const id of r.changedMedia) sql.media(byId(d.media, id) as Media);
       for (const id of r.changedRels) sql.rel(byId(d.rels, id) as Relationship);
@@ -783,4 +811,96 @@ export async function markNotDuplicate(a: string, b: string) {
   set.add(notDuplicateKey(a, b));
   await setSetting('not_duplicates', JSON.stringify([...set]));
   toast('Got it — they won’t be suggested again');
+}
+
+// ---------- life stories ----------
+export interface StoryDraft {
+  id?: string;
+  title: string;
+  body: string;
+  date: string;
+  place: string;
+  factId: string;
+  people: string[]; // the first is the person whose profile it was written on
+  mediaIds: string[];
+}
+
+/** Saves a life story. Stories about another account holder wait for them to approve before they show. */
+export async function saveStory(f: StoryDraft): Promise<string | null> {
+  if (!f.title.trim() && !f.body.trim()) {
+    toast('Give the story a title or write something first');
+    return null;
+  }
+  if (!f.people.length) {
+    toast('Choose who the story is about');
+    return null;
+  }
+  const id = f.id || newId();
+  const now = new Date().toISOString();
+  const { name, email } = me();
+  let waiting: string[] = [];
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      let s = d.stories.find((x) => x.id === id);
+      if (!s) {
+        s = { id, title: '', body: '', date: '', sortYear: null, placeId: '', factId: '', author: name, authorEmail: email, people: {}, mediaIds: [], createdAt: now, updatedAt: now };
+        d.stories.push(s);
+      }
+      const date = normaliseDate(f.date);
+      const fact = f.factId ? d.facts.find((x) => x.id === f.factId) : undefined;
+      const people: Record<string, TagStatus> = {};
+      for (const pid of f.people) {
+        const p = d.people.find((x) => x.id === pid);
+        if (!p) continue;
+        people[pid] = s.people[pid] || newTagStatus(p);
+      }
+      waiting = Object.entries(people)
+        .filter(([, st]) => st === 'pending')
+        .map(([pid]) => pid);
+      Object.assign(s, {
+        title: f.title.trim(),
+        body: f.body.trim(),
+        date,
+        sortYear: yearOf(date) ?? (fact ? yearOf(fact.date) : null),
+        placeId: ensurePlace(d, sql, f.place),
+        factId: fact ? fact.id : '',
+        people,
+        mediaIds: f.mediaIds.filter((m) => d.media.some((x) => x.id === m)),
+        updatedAt: now,
+      });
+      sql.story(s as Story);
+    }),
+  );
+  if (!ok) return null;
+  toast(waiting.length ? `Story saved — it shows on ${T().short(waiting[0])}’s profile once they approve it` : f.id ? 'Story updated' : 'Story added to the timeline');
+  return id;
+}
+
+export async function deleteStory(id: string) {
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      d.stories = d.stories.filter((s) => s.id !== id);
+      sql.del('story', id);
+    }),
+  );
+  if (ok) toast('Story deleted');
+}
+
+/** Approve, hide or show a story on someone's profile. */
+export async function setStoryStatus(id: string, pid: string, status: TagStatus) {
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      const s = d.stories.find((x) => x.id === id);
+      if (!s || !(pid in s.people)) return;
+      s.people[pid] = status;
+      sql.story(s as Story);
+    }),
+  );
+  if (ok) toast(status === 'shown' ? 'Now showing on the profile' : 'Hidden from the profile');
+}
+
+/** Whether the signed-in account wrote this story (and so can edit or delete it). */
+export function isMyStory(s: Story) {
+  const { email, name } = me();
+  return s.authorEmail ? s.authorEmail === email : !s.author || s.author === name;
 }

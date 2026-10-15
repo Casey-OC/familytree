@@ -146,6 +146,35 @@ export const MIGRATIONS: string[] = [
   );
   UPDATE person SET profile_id = id WHERE profile_id = '';
   `,
+  // v3 — where someone lived when they were born / when they died; life stories
+  `
+  ALTER TABLE fact ADD COLUMN home_place_id TEXT;
+  CREATE TABLE story (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    date_text TEXT NOT NULL DEFAULT '',
+    sort_year INTEGER,
+    place_id TEXT,
+    fact_id TEXT REFERENCES fact(id) ON DELETE SET NULL,
+    author TEXT NOT NULL DEFAULT '',
+    author_email TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE story_person (
+    story_id TEXT NOT NULL REFERENCES story(id) ON DELETE CASCADE,
+    person_id TEXT NOT NULL REFERENCES person(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'shown' CHECK (status IN ('pending','shown','hidden')),
+    PRIMARY KEY (story_id, person_id)
+  );
+  CREATE TABLE story_media (
+    story_id TEXT NOT NULL REFERENCES story(id) ON DELETE CASCADE,
+    media_id TEXT NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    pos INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (story_id, media_id)
+  );
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -5,7 +5,7 @@ import { deleteFact, saveFact } from '../../data/actions';
 import { treeApi } from '../../lib/family';
 import { confOf } from '../../lib/confidence';
 import { QUALIFIERS } from '../../lib/dates';
-import { FACT_TYPES, type Quality } from '../../lib/types';
+import { FACT_TYPES, HOME_EVENTS, type Quality } from '../../lib/types';
 import { Conf, PlaceInput } from '../../components/ui';
 
 /** Add or edit a fact, with citations and a live preview of its confidence. */
@@ -70,6 +70,13 @@ export function FactFormView({ fm }: { fm: FactForm }) {
         <label className="fl" htmlFor={id('place2')}>
           Place
           <PlaceInput id={id('place2')} value={fm.place} onChange={(v) => set({ place: v })} />
+        </label>
+      )}
+      {HOME_EVENTS[fm.type] && (
+        <label className="fl" htmlFor={id('home')}>
+          {HOME_EVENTS[fm.type]}
+          <PlaceInput id={id('home')} value={fm.home || ''} onChange={(v) => set({ home: v })} />
+          <span className="fieldnote">Where {fm.type === 'Birth' ? 'the family was living when they were born' : 'they were living when they died'} — this can be different from the {fm.type === 'Birth' ? 'birthplace (such as a hospital)' : 'place of death'}.</span>
         </label>
       )}
       <label className="fl" htmlFor={id('desc')}>

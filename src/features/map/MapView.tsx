@@ -119,6 +119,10 @@ export function MapView() {
         const pl = T.place[f.placeId];
         const y = factYear(f);
         if (pl && pl.lat !== null && pl.lon !== null && y) evs.push({ pid, f, pl, y, cat: cat(f.type) });
+        // Where they lived at their birth or death counts as a residence on the map
+        const home = f.homePlaceId ? T.place[f.homePlaceId] : undefined;
+        if (home && home.id !== f.placeId && home.lat !== null && home.lon !== null && y)
+          evs.push({ pid, f: { ...f, type: f.type === 'Birth' ? 'Family home at birth' : 'Home at death' }, pl: home, y, cat: 'Residence' });
       }
     const shown = evs.filter((e) => e.y <= year && types[e.cat]);
     const by: Record<string, typeof evs> = {};

@@ -44,6 +44,7 @@ export interface Fact {
   date2: string; // second date for "between"
   sortYear: number | null;
   placeId: string;
+  homePlaceId: string; // Birth / Death: where they lived at the time ('' if not recorded)
   desc: string;
   conf: 'auto' | Confidence; // manual override, or automatic from evidence
   citeIds: string[];
@@ -165,6 +166,7 @@ export interface TreeData {
   places: Place[];
   hints: Hint[];
   tasks: Task[];
+  stories: Story[];
   settings: Record<string, string>;
 }
 
@@ -178,6 +180,7 @@ export const emptyTree = (): TreeData => ({
   places: [],
   hints: [],
   tasks: [],
+  stories: [],
   settings: {},
 });
 
@@ -213,3 +216,23 @@ export const SOURCE_TYPES = [
   'Personal knowledge',
   'Other',
 ];
+
+/** Events that can also record where the person lived at the time. */
+export const HOME_EVENTS: Record<string, string> = { Birth: 'Family home at the time of birth', Death: 'Home at the time of death' };
+
+/** A story written about someone, tied into their timeline by its date or by an event. */
+export interface Story {
+  id: string;
+  title: string;
+  body: string;
+  date: string; // as written, e.g. "Summer 1962" or "1962"
+  sortYear: number | null;
+  placeId: string;
+  factId: string; // the event it's about, '' if none
+  author: string; // name of the account that wrote it
+  authorEmail: string;
+  people: Record<string, TagStatus>; // who it's about; others' stories about an account holder wait for approval
+  mediaIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}

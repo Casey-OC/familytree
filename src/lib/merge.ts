@@ -205,6 +205,7 @@ export interface MergeResult {
   changedMedia: string[];
   changedHints: string[];
   changedTasks: string[];
+  changedStories: string[];
   changedSettings: string[];
   movedFacts: number;
   movedPhotos: number;
@@ -237,6 +238,7 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
     changedMedia: [],
     changedHints: [],
     changedTasks: [],
+    changedStories: [],
     changedSettings: [],
     movedFacts: 0,
     movedPhotos: 0,
@@ -261,6 +263,7 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
   if (k.privacy === 'Shared' && o.privacy === 'Private' && k.living) k.privacy = 'Private';
 
   // Facts: move across; combine a fact that's already there (same type and year, or both undated one-off facts).
+  const twinOf: Record<string, string> = {};
   const ONE_OFF = new Set(['Birth', 'Death', 'Burial', 'Christening', 'Baptism', 'Cremation']);
   for (const f of d.facts.filter((x) => x.personId === otherId)) {
     const y = yearOf(f.date);
@@ -280,6 +283,7 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
         if (!k.notes.includes(line)) k.notes = [k.notes.trim(), line].filter(Boolean).join('\n\n');
       }
       if (!twin.placeId && f.placeId) twin.placeId = f.placeId;
+      if (!twin.homePlaceId && f.homePlaceId) twin.homePlaceId = f.homePlaceId;
       if (!twin.desc && f.desc) twin.desc = f.desc;
       twin.citeIds = [...new Set([...twin.citeIds, ...f.citeIds])];
       if (twin.conf === 'auto' && f.conf !== 'auto') twin.conf = f.conf;
@@ -291,6 +295,7 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
       });
       d.facts = d.facts.filter((x) => x.id !== f.id);
       r.removedFacts.push(f.id);
+      twinOf[f.id] = twin.id;
       if (!r.changedFacts.includes(twin.id)) r.changedFacts.push(twin.id);
     } else {
       f.personId = keepId;
@@ -358,6 +363,21 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
       t.personId = keepId;
       if (!r.changedTasks.includes(t.id)) r.changedTasks.push(t.id);
     }
+
+  for (const s of d.stories || []) {
+    let touched = false;
+    if (otherId in s.people) {
+      const st = s.people[otherId];
+      delete s.people[otherId];
+      if (!(keepId in s.people) || st === 'shown') s.people[keepId] = st;
+      touched = true;
+    }
+    if (twinOf[s.factId]) {
+      s.factId = twinOf[s.factId];
+      touched = true;
+    }
+    if (touched) r.changedStories.push(s.id);
+  }
 
   for (const key of ['home_person', 'self_person']) {
     if (d.settings[key] === otherId) {

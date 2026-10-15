@@ -295,7 +295,7 @@ export function TreeView() {
             return (
               <div
                 key={id + '-' + i}
-                className={'tcard' + (panel?.id === id ? ' sel' : '') + (p.living ? ' living' : '')}
+                className={'tcard' + (p.sex === 'M' ? ' male' : p.sex === 'F' ? ' female' : '') + (panel?.id === id ? ' sel' : '') + (p.living ? ' living' : '')}
                 style={{ left: n.x, top: n.y }}
                 onContextMenu={(e) => {
                   e.preventDefault();
@@ -328,8 +328,8 @@ export function TreeView() {
                     </span>
                   </span>
                 </button>
-                <span className="sexmark" title={p.sex === 'M' ? 'Male' : p.sex === 'F' ? 'Female' : p.sex === 'X' ? 'Other' : 'Sex unknown'}>
-                  {p.sex === 'M' ? 'M' : p.sex === 'F' ? 'F' : p.sex === 'X' ? 'X' : '?'}
+                <span className="sexmark" title={p.sex === 'M' ? 'Male' : p.sex === 'F' ? 'Female' : 'Not recorded yet'}>
+                  {p.sex === 'M' ? 'M' : p.sex === 'F' ? 'F' : '?'}
                 </span>
                 <button
                   className="tc-more"

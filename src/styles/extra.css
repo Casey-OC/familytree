@@ -39,9 +39,8 @@ audio.native { width: 100%; }
 .empty-hero { flex: 1; display: flex; align-items: center; justify-content: center; }
 .side-foot .ok { color: var(--ok); }
 .table td .btn + .btn { margin-left: 6px; }
-.fieldnote { font-size: 13px; color: var(--muted); font-weight: 400; }
+.fieldnote { font-size: 15px; color: var(--muted); font-weight: 400; }
 .persondetails { display: flex; gap: 6px; flex-wrap: wrap; }
-.tc-main img { display: none; }
 
 /* bottom navigation — phones and narrow windows */
 .bottomnav { display: none; }
@@ -227,4 +226,41 @@ fieldset.parentrow legend { font-weight: 700; padding: 0 6px; color: var(--muted
 .merge-choice { display: grid; grid-template-columns: 170px 1fr 1fr; gap: 10px; align-items: center; }
 @media (max-width: 760px) {
   .dupe-row, .merge-cols, .merge-choice { grid-template-columns: 1fr; }
+}
+
+/* ---------- blue for male, pink for female (the M / F mark stays, so it's never colour alone) ---------- */
+.app { --male: #2F6DB5; --male-soft: #E4EEFA; --female: #C2477F; --female-soft: #FBE6EF; }
+.app.dark { --male: #8DB6E8; --male-soft: #1C2633; --female: #E79ABD; --female-soft: #33202A; }
+.tcard.male, .tcard.male.living { background: var(--male-soft); border-color: var(--male); }
+.tcard.female, .tcard.female.living { background: var(--female-soft); border-color: var(--female); }
+.tcard.male .sexmark { color: var(--male); border-color: var(--male); background: var(--surface); }
+.tcard.female .sexmark { color: var(--female); border-color: var(--female); background: var(--surface); }
+.tcard.male:hover, .tcard.female:hover { box-shadow: 0 0 0 3px var(--pri-soft), var(--shadow); }
+.tcard.male.sel, .tcard.female.sel { border-color: var(--pri); }
+.av.male:not(.img):not(.photo) { background: var(--male-soft); color: var(--male); }
+.av.female:not(.img):not(.photo) { background: var(--female-soft); color: var(--female); }
+.tcard.male .av, .tcard.female .av { border-color: var(--surface); }
+.fact-age { font-size: 15px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+/* ---------- life stories and timeline ---------- */
+.story { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.story.compact { padding: 12px 14px; box-shadow: none; background: var(--surface2); }
+.story.dim { opacity: 0.7; }
+.story-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.story-badge { background: var(--gold-soft); color: var(--gold-text); display: inline-flex; gap: 4px; align-items: center; }
+.story-title { margin: 0; font-family: 'Literata', serif; }
+.story-body { white-space: pre-wrap; line-height: 1.6; font-size: 16px; }
+.story.compact .story-body { font-size: 15px; }
+.story-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; max-width: 520px; }
+.story-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--line2); padding-top: 8px; }
+.story-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; max-height: 220px; overflow: auto; }
+.story-pick .pf-mini-tile { position: relative; outline-offset: 2px; }
+.story-pick .pf-mini-tile.on { outline: 3px solid var(--pri); }
+.pick-tick { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; background: var(--pri); color: var(--on-pri); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.chip .fx { border: 0; background: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 0 0 6px; color: inherit; min-width: 28px; min-height: 28px; }
+.pf-life-date { display: flex; flex-direction: column; gap: 2px; }
+.pf-life-age { font-weight: 400; font-size: 15px; color: var(--muted); }
+.pf-life li.pf-life-story { grid-template-columns: 140px 1fr; align-items: start; }
+@media (max-width: 860px) {
+  .pf-life li.pf-life-story { grid-template-columns: 1fr; }
 }

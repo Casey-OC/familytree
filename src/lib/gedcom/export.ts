@@ -65,7 +65,7 @@ export function exportGedcom(T: TreeApi, opts: ExportOptions): { text: string; p
   push(L, 0, 'HEAD');
   push(L, 1, 'SOUR', 'FAMILYTREE');
   push(L, 2, 'NAME', 'Family Tree');
-  push(L, 2, 'VERS', '0.5.0');
+  push(L, 2, 'VERS', '0.6.0');
   push(L, 1, 'DATE', toGedcomDate(`${now.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.getMonth()]} ${now.getFullYear()}`, 'exact'));
   if (opts.treeName) push(L, 1, 'FILE', opts.treeName.replace(/[\\/:*?"<>|]/g, '') + '.ged');
   push(L, 1, 'SUBM', '@U1@');
@@ -154,6 +154,13 @@ export function exportGedcom(T: TreeApi, opts: ExportOptions): { text: string; p
         if (f.desc) push(L, 2, 'NOTE', f.desc);
       }
       eventBody(f, 2);
+      // Where they lived at their birth or death: a residence with the same date
+      const home = f.homePlaceId ? T.place[f.homePlaceId] : undefined;
+      if (home) {
+        push(L, 1, 'RESI');
+        eventBody({ ...f, placeId: home.id, citeIds: [] }, 2);
+        push(L, 2, 'NOTE', f.type === 'Birth' ? 'Family home at the time of birth' : 'Home at the time of death');
+      }
     }
     for (const f of fams) if (f.kids.includes(p.id)) push(L, 1, 'FAMC', f.id);
     for (const f of fams) if (f.h === p.id || f.w === p.id) push(L, 1, 'FAMS', f.id);

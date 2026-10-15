@@ -32,6 +32,7 @@ export interface AboutYou {
   birthDate: string; // a full date, e.g. "17 Oct 1946"
   birthPlace: string;
   livesIn?: string; // where you live now
+  homeAtBirth?: string; // where your family lived when you were born
   father?: ParentInput;
   mother?: ParentInput;
 }
@@ -39,6 +40,7 @@ export interface AboutYou {
 export function aboutYouProblem(a: AboutYou): string {
   if (!a.given.trim()) return 'Add your first name.';
   if (!a.surname.trim()) return 'Add your surname at birth.';
+  if (a.sex !== 'M' && a.sex !== 'F') return 'Choose male or female.';
   if (!fullDate(normaliseDate(a.birthDate))) return 'Choose your full date of birth.';
   const y = yearOf(a.birthDate)!;
   if (y > new Date().getFullYear() || y < 1900) return 'Check the year you were born.';
@@ -86,7 +88,17 @@ export function makeSelfTree(a: AboutYou, email: string, newId: () => string): {
     placeId = newId();
     d.places.push({ id: placeId, name: a.birthPlace.trim(), hist: a.birthPlace.trim(), lat: null, lon: null });
   }
-  const birth: Fact = { id: newId(), personId: self.id, type: 'Birth', date, q: 'exact', date2: '', sortYear: yearOf(date), placeId, desc: '', conf: 'Proven', citeIds: [citeId] };
+  const placeFor = (name: string) => {
+    const n = name.trim();
+    if (!n) return '';
+    const hit = d.places.find((p) => p.name.toLowerCase() === n.toLowerCase());
+    if (hit) return hit.id;
+    const id = newId();
+    d.places.push({ id, name: n, hist: n, lat: null, lon: null });
+    return id;
+  };
+  const homePlaceId = placeFor(a.homeAtBirth || '');
+  const birth: Fact = { id: newId(), personId: self.id, type: 'Birth', date, q: 'exact', date2: '', sortYear: yearOf(date), placeId, homePlaceId, desc: '', conf: 'Proven', citeIds: [citeId] };
   d.facts.push(birth);
 
   if (a.livesIn?.trim()) {
@@ -97,7 +109,7 @@ export function makeSelfTree(a: AboutYou, email: string, newId: () => string): {
       d.places.push({ id: pid, name: here, hist: here, lat: null, lon: null });
     }
     const y = String(new Date().getFullYear());
-    d.facts.push({ id: newId(), personId: self.id, type: 'Residence', date: y, q: 'exact', date2: '', sortYear: +y, placeId: pid, desc: 'Lives here now', conf: 'Proven', citeIds: [citeId] });
+    d.facts.push({ id: newId(), personId: self.id, type: 'Residence', date: y, q: 'exact', date2: '', sortYear: +y, placeId: pid, homePlaceId: '', desc: 'Lives here now', conf: 'Proven', citeIds: [citeId] });
   }
 
   const rels: Relationship[] = [];

@@ -4,7 +4,7 @@ import { useData } from '../../data/store';
 import { toast } from '../../data/ui';
 import { addRelModal, openPerson } from '../../data/actions';
 import { treeApi, type TreeApi } from '../../lib/family';
-import { descendantChart, fanChart, pedigreeChart, type ColourMode } from '../../lib/charts';
+import { descendantChart, fanChart, pedigreeChart, SEX_COLOUR, type ColourMode } from '../../lib/charts';
 import { Seg, Switch } from '../../components/ui';
 import { FamilyBook, bookPages, type BookOptions } from './FamilyBook';
 
@@ -17,7 +17,7 @@ export function Charts() {
   const [chart, setChart] = useState<ChartKind>('fan');
   const [rootSel, setRoot] = useState(defaultRoot);
   const [gens, setGens] = useState(5);
-  const [colour, setColour] = useState<ColourMode>('branch');
+  const [colour, setColour] = useState<ColourMode>('sex');
   const [photos, setPhotos] = useState(true);
   const [fanFull, setFanFull] = useState(false);
   const [printing, setPrinting] = useState<null | 'chart' | 'book'>(null);
@@ -47,7 +47,12 @@ export function Charts() {
     );
 
   const legend =
-    colour === 'branch'
+    colour === 'sex'
+      ? ([
+          ['Male', SEX_COLOUR.M],
+          ['Female', SEX_COLOUR.F],
+        ] as const)
+      : colour === 'branch'
       ? T.branches().slice(0, 8).map((b) => [b.label, b.colour] as const)
       : ([
           ['Paternal side', '#2F6FA8'],
@@ -102,6 +107,7 @@ export function Charts() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {(
                     [
+                      ['sex', 'Male (blue) / female (pink)'],
                       ['branch', 'By family branch'],
                       ['line', 'By line (paternal / maternal)'],
                     ] as [ColourMode, string][]
