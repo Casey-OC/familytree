@@ -1,3 +1,4 @@
+import { DateInput } from '../components/DateInput';
 import { useState } from 'react';
 import { setPrefs, useData } from '../data/store';
 import { setUi, toast, useUi, type Modal } from '../data/ui';
@@ -8,7 +9,8 @@ import { SOURCE_TYPES } from '../lib/types';
 import { ModalFrame, PlaceInput } from '../components/ui';
 import { THEMES } from '../lib/themes';
 import { GeocodeAllModal } from './map/Geocode';
-import { ChangePasswordModal, EncryptModal, RemovePasswordModal, SetPasswordModal } from './security/Security';
+import { EncryptModal } from './security/Security';
+import { ChangePasswordModal } from './account/Account';
 
 export function Modals() {
   const modal = useUi((s) => s.modal);
@@ -33,12 +35,8 @@ export function Modals() {
       return <RenameModal m={modal} close={close} />;
     case 'shortcuts':
       return <ShortcutsModal close={close} />;
-    case 'setPassword':
-      return <SetPasswordModal close={close} />;
     case 'changePassword':
       return <ChangePasswordModal close={close} />;
-    case 'removePassword':
-      return <RemovePasswordModal close={close} />;
     case 'encrypt':
       return <EncryptModal on={modal.on} close={close} />;
     case 'geocodeAll':
@@ -212,7 +210,7 @@ function AddPersonModal({ m, close }: { m: M<'add'>; close: () => void }) {
           </label>
           <label className="fl">
             Date
-            <input value={m.bdate} onChange={(e) => patchModal({ bdate: e.target.value })} placeholder="e.g. 1998" />
+            <DateInput value={m.bdate} onChange={(v) => patchModal({ bdate: v })} placeholder="e.g. 1998" label="birth date" />
           </label>
           <label className="fl">
             Place
@@ -374,7 +372,7 @@ function UploadModal({ m, close }: { m: M<'upload'>; close: () => void }) {
           <div className="frow">
             <label className="fl">
               Date
-              <input value={meta.date} onChange={(e) => setMeta({ ...meta, date: e.target.value })} placeholder="e.g. 1979" />
+              <DateInput value={meta.date} onChange={(v) => setMeta({ ...meta, date: v })} placeholder="e.g. 1979" label="date" />
             </label>
             <label className="fl">
               Place

@@ -1,3 +1,4 @@
+import { DateInput } from '../../components/DateInput';
 import { useData } from '../../data/store';
 import { setUi, useUi } from '../../data/ui';
 import { deleteCitation, deleteSource, openMedia, openPerson, saveCitation } from '../../data/actions';
@@ -91,7 +92,7 @@ export function SourcePanel({ sid }: { sid: string }) {
             </label>
             <label className="fl">
               Date accessed
-              <input value={cf.accessed} onChange={(e) => set({ accessed: e.target.value })} />
+              <DateInput value={cf.accessed} onChange={(v) => set({ accessed: v })} label="date accessed" />
             </label>
           </div>
           <label className="fl">

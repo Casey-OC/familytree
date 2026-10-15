@@ -138,7 +138,7 @@ export function PersonLink({ pid, label, className = 'link', style }: { pid: str
   const data = useData((s) => s.data);
   const T = treeApi(data);
   return (
-    <button className={className} style={style} onClick={() => openPerson(pid)}>
+    <button type="button" className={className} style={style} onClick={() => openPerson(pid)}>
       {label ?? T.nm(pid)}
     </button>
   );
@@ -152,7 +152,7 @@ export function Seg<T extends string>({ value, options, onChange, label }: { val
   return (
     <div className="seg" role="group" aria-label={label}>
       {options.map(([k, l]) => (
-        <button key={k} className={value === k ? 'on' : ''} aria-pressed={value === k} onClick={() => onChange(k)}>
+        <button type="button" key={k} className={value === k ? 'on' : ''} aria-pressed={value === k} onClick={() => onChange(k)}>
           {l}
         </button>
       ))}
@@ -164,7 +164,7 @@ export function Switch({ on, onToggle, label, disabled }: { on: boolean; onToggl
   return (
     <>
       <span className="swlbl">{on ? 'On' : 'Off'}</span>
-      <button className={'sw' + (on ? ' on' : '')} onClick={onToggle} role="switch" aria-checked={on} aria-label={label} disabled={disabled} style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined} />
+      <button type="button" className={'sw' + (on ? ' on' : '')} onClick={onToggle} role="switch" aria-checked={on} aria-label={label} disabled={disabled} style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined} />
     </>
   );
 }
@@ -173,7 +173,7 @@ export function Tabs<T extends string>({ value, tabs, onChange }: { value: T; ta
   return (
     <div className="tabs" role="tablist">
       {tabs.map(([k, l]) => (
-        <button key={k} role="tab" aria-selected={value === k} className={value === k ? 'on' : ''} onClick={() => onChange(k)}>
+        <button type="button" key={k} role="tab" aria-selected={value === k} className={value === k ? 'on' : ''} onClick={() => onChange(k)}>
           {l}
         </button>
       ))}

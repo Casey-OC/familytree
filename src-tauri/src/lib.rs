@@ -7,6 +7,7 @@
 mod backup;
 mod crypto;
 mod db;
+mod keychain;
 mod media;
 #[cfg(desktop)]
 mod menu;
@@ -37,6 +38,9 @@ pub fn run() {
             db::tree_is_encrypted,
             db::tree_set_encryption,
             db::app_change_key,
+            keychain::keychain_set,
+            keychain::keychain_get,
+            keychain::keychain_delete,
             storage::paths_info,
             storage::prefs_read,
             storage::prefs_write,

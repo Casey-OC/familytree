@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useData, loadPrefs, setPrefs } from './data/store';
 import { setUi, ui, useUi } from './data/ui';
-import { continueStartup, LockScreen } from './features/security/Security';
+import { AboutYouScreen, AuthScreen, RecoveryScreen, startSession } from './features/account/Account';
 import { closePanel, flushNotes, go } from './data/actions';
 import * as platform from './data/platform';
-import { FirstRun, EmptyTree, ImportStart } from './features/FirstRun';
+import { ImportStart } from './features/FirstRun';
 import { Shell } from './features/Shell';
 import { Modals } from './features/Modals';
 import { handleMenu } from './features/menuCommands';
@@ -20,9 +20,8 @@ export default function App() {
   // Start-up: load preferences, reopen the last tree.
   useEffect(() => {
     (async () => {
-      const p = await loadPrefs();
-      if (p.lock) setUi({ screen: 'locked' });
-      else await continueStartup();
+      await loadPrefs();
+      await startSession();
     })();
   }, []);
 
@@ -98,9 +97,9 @@ export default function App() {
           </div>
         </div>
       )}
-      {screen === 'locked' && <LockScreen />}
-      {screen === 'first' && <FirstRun />}
-      {screen === 'empty' && <EmptyTree />}
+      {screen === 'auth' && <AuthScreen />}
+      {screen === 'about' && <AboutYouScreen />}
+      {screen === 'recovery' && <RecoveryScreen />}
       {screen === 'import' && <ImportStart />}
       {screen === 'app' && <Shell />}
       {modal && <Modals />}

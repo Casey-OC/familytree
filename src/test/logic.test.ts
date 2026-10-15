@@ -72,3 +72,68 @@ describe('app password', () => {
     expect(v.hash).not.toContain('correct');
   });
 });
+
+import { monthGrid, parseForCalendar } from '../components/DateInput';
+describe('date picker', () => {
+  it('opens on the typed date, month or year', () => {
+    expect(parseForCalendar('12 Feb 1858')).toEqual({ y: 1858, m: 1, d: 12 });
+    expect(parseForCalendar('Aug 1885')).toEqual({ y: 1885, m: 7, d: null });
+    expect(parseForCalendar('abt 1890')).toEqual({ y: 1890, m: 0, d: null });
+  });
+  it('lays out months starting on Monday', () => {
+    const g = monthGrid(2026, 9); // October 2026 starts on a Thursday
+    expect(g.slice(0, 4)).toEqual([null, null, null, 1]);
+    expect(g.filter(Boolean)).toHaveLength(31);
+    expect(g.length % 7).toBe(0);
+  });
+});
+
+import { aboutYouProblem, makeSelfTree, validEmail } from '../lib/accounts';
+describe('sign-up tree', () => {
+  let n = 0;
+  const id = () => 'id' + ++n;
+  const about = { given: 'Peter John', surname: 'Pascoe', sex: 'M' as const, birthDate: '17 Oct 1946', birthPlace: 'Cairns, Queensland', father: { given: 'Jack', surname: 'Pascoe', living: false }, mother: { given: 'Joan', surname: 'Ellis', living: false } };
+  it('checks the details', () => {
+    expect(aboutYouProblem({ ...about, birthDate: '1946' })).toBe('Choose your full date of birth.');
+    expect(aboutYouProblem(about)).toBe('');
+    expect(validEmail('casey@example.com')).toBe(true);
+    expect(validEmail('casey@')).toBe(false);
+  });
+  it('starts the tree with you, verified, and your parents', () => {
+    const { data, selfId } = makeSelfTree(about, 'peter@example.com', id);
+    const T = treeApi(data);
+    expect(data.settings.tree_name).toBe('Pascoe Family Tree');
+    expect(T.person[selfId].living).toBe(true);
+    const birth = T.ff(selfId, 'Birth')!;
+    expect(T.conf(birth)).toBe('Proven');
+    expect(T.cite[birth.citeIds[0]].quality).toBe('Primary');
+    expect(T.parents(selfId)).toHaveLength(2);
+    expect(T.spouses(T.parents(selfId)[0])).toHaveLength(1);
+    expect(T.rootId).not.toBe(selfId); // the family view starts from the oldest generation
+    expect(T.placeName(birth.placeId)).toBe('Cairns, Queensland');
+  });
+});
+
+import { newDataKey, newRecoveryCode, normRecoveryCode, unwrapKey, wrapKey } from '../lib/accounts';
+describe('account keys', () => {
+  it('locks the data key with the password and the recovery code', async () => {
+    const key = newDataKey();
+    expect(key).toMatch(/^[0-9a-f]{64}$/);
+    const code = newRecoveryCode();
+    expect(code).toMatch(/^([A-Z2-9]{4}-){5}[A-Z2-9]{4}$/);
+    const byPw = await wrapKey(key, 'Pascoe1885!', 1000);
+    const byCode = await wrapKey(key, code, 1000);
+    expect(JSON.stringify(byPw)).not.toContain(key);
+    expect(await unwrapKey(byPw, 'Pascoe1885!')).toBe(key);
+    expect(await unwrapKey(byPw, 'pascoe1885!')).toBeNull();
+    expect(await unwrapKey(byCode, normRecoveryCode(code.toLowerCase().replace(/-/g, ' ')))).toBe(key);
+  });
+  it('adds where you live now as a verified residence', () => {
+    let n = 0;
+    const { data, selfId } = makeSelfTree({ given: 'Casey', surname: 'Pascoe', sex: 'U', birthDate: '1 Jan 1980', birthPlace: 'Cairns', livesIn: 'Brisbane, Queensland' }, 'c@example.com', () => 'x' + ++n);
+    const T = treeApi(data);
+    const res = T.ff(selfId, 'Residence')!;
+    expect(T.placeName(res.placeId)).toBe('Brisbane, Queensland');
+    expect(T.conf(res)).toBe('Proven');
+  });
+});

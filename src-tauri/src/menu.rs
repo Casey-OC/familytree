@@ -23,14 +23,13 @@ pub fn install(app: &mut App) -> tauri::Result<()> {
     };
 
     let file = SubmenuBuilder::new(&h, "File")
-        .item(&item(&h, "new-tree", "New tree…", None)?)
-        .item(&item(&h, "open-sample", "Open sample tree", None)?)
+        .item(&item(&h, "open-sample", "Explore the sample tree", None)?)
         .separator()
         .item(&item(&h, "import-gedcom", "Import GEDCOM…", Some("CmdOrCtrl+I"))?)
         .item(&item(&h, "export-gedcom", "Export GEDCOM…", Some("CmdOrCtrl+E"))?)
         .separator()
         .item(&item(&h, "backup-now", "Back up now", Some("CmdOrCtrl+B"))?)
-        .item(&item(&h, "lock", "Lock now", Some("CmdOrCtrl+L"))?)
+        .item(&item(&h, "lock", "Sign out", Some("CmdOrCtrl+L"))?)
         .separator()
         .close_window()
         .build()?;

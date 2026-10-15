@@ -1,6 +1,6 @@
 [package]
 name = "familytree"
-version = "0.3.0"
+version = "0.4.0"
 description = "Family Tree — genealogy workspace"
 authors = ["Casey"]
 edition = "2021"
@@ -26,6 +26,8 @@ rusqlite = { version = "0.32", features = ["bundled-sqlcipher-vendored-openssl"]
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp", "tiff", "bmp"] }
 uuid = { version = "1", features = ["v4"] }
 ureq = { version = "2.12", default-features = false, features = ["tls", "json", "gzip"] }
+# "Keep me signed in": the account key goes in Windows Credential Manager / macOS Keychain.
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
 [dev-dependencies]

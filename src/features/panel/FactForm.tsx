@@ -1,3 +1,4 @@
+import { DateInput } from '../../components/DateInput';
 import { useData } from '../../data/store';
 import { setUi, toast, type FactForm } from '../../data/ui';
 import { deleteFact, saveFact } from '../../data/actions';
@@ -51,12 +52,12 @@ export function FactFormView({ fm }: { fm: FactForm }) {
       <div className="frow">
         <label className="fl" htmlFor={id('date')}>
           Date
-          <input id={id('date')} value={fm.date} onChange={(e) => set({ date: e.target.value })} placeholder="e.g. 14 Mar 1890 or 1890" />
+          <DateInput id={id('date')} value={fm.date} onChange={(v) => set({ date: v })} label="date" />
         </label>
         {fm.q === 'between' ? (
           <label className="fl" htmlFor={id('date2')}>
             and
-            <input id={id('date2')} value={fm.date2} onChange={(e) => set({ date2: e.target.value })} placeholder="e.g. 1892" />
+            <DateInput id={id('date2')} value={fm.date2} onChange={(v) => set({ date2: v })} placeholder="e.g. 1892" label="second date" />
           </label>
         ) : (
           <label className="fl" htmlFor={id('place')}>

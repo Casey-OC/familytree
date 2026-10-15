@@ -1,6 +1,6 @@
 # Build status
 
-Updated 15 Oct 2026 (v0.3.0).
+Updated 15 Oct 2026 (v0.4.0).
 
 ## Done
 
@@ -18,9 +18,17 @@ Updated 15 Oct 2026 (v0.3.0).
 - Accessibility: axe scan clean on every screen, contrast checked for all themes, keyboard tree navigation, skip link, reduced motion.
 - Auto-updater: not done. Casey chose manual installs, because the repo is private and private repos can't serve updates.
 
+**Accounts and sign-up**: complete (v0.4.0).
+- Sign up, log in, "Keep me signed in" (data key in Windows Credential Manager / macOS Keychain), forgot password with a 24-character recovery code shown once at sign-up.
+- Sign-up asks "About you" and creates the tree automatically, named after your surname, with you as the home person. Your own birth and where you live now are marked Proven, cited to a "Personal knowledge" source.
+- Each account has a random data key (`src/lib/accounts.ts`) wrapped by the password and by the recovery code (PBKDF2 + AES-GCM). New trees are SQLCipher-encrypted with it. Changing the password re-wraps the key only. v0.3 app-password trees are migrated at first sign-up.
+- Accounts are local for now; the same email/password become the online account once Supabase is connected.
+- Calendar date picker on every date field (`src/components/DateInput.tsx`); partial dates ("1890", "Aug 1885") can still be typed.
+- "New tree" removed; "Import a GEDCOM file as a new tree" and "Explore the sample tree" are in the tree menu.
+
 ## Next
 
-Phase 3: Supabase project (Casey to create), accounts, invites, Family Wall, moderation, life-event approval, offline post queue, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
+Phase 3: Supabase project (Casey to create), online accounts, invites, Family Wall, moderation, life-event approval, offline post queue, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
 
 ## Decisions still open for Casey
 

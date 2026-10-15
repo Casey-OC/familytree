@@ -1,5 +1,5 @@
 // Native menu items and keyboard shortcuts land here.
-import { closeTree, setPrefs, useData } from '../data/store';
+import { setPrefs, useData } from '../data/store';
 import { setUi, toast, ui } from '../data/ui';
 import { addRelModal, go } from '../data/actions';
 import * as platform from '../data/platform';
@@ -9,11 +9,6 @@ export async function handleMenu(id: string) {
   const inApp = ui().screen === 'app';
   const needTree = (fn: () => void) => (inApp ? fn() : toast('Open or create a tree first'));
   switch (id) {
-    case 'new-tree':
-      setUi({ panel: null, menu: null });
-      await closeTree();
-      setUi({ screen: 'empty' });
-      break;
     case 'open-sample':
       await openSample();
       break;
@@ -84,7 +79,7 @@ export async function handleMenu(id: string) {
       });
       break;
     case 'lock':
-      (await import('./security/Security')).lockNow();
+      (await import('./account/Account')).signOut();
       break;
     case 'shortcuts':
       setUi({ modal: { kind: 'shortcuts' } });
