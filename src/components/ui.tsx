@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useData } from '../data/store';
 import { treeApi } from '../lib/family';
 import { mediaUrl } from '../data/platform';
 import { confLabel } from '../lib/confidence';
-import type { Confidence } from '../lib/types';
+import type { Confidence, PhotoCrop } from '../lib/types';
+import { defaultCrop, frameRect } from '../lib/photoFrame';
 import { openPerson } from '../data/actions';
 
 const PATHS: Record<string, React.ReactNode> = {
@@ -104,7 +105,37 @@ export function Icon({ name, sm, className }: { name: keyof typeof PATHS | strin
 }
 
 /** A person's avatar: their chosen photo (cropped to their face), the sample illustration, or initials. */
-export function Avatar({ pid, size = '', style }: { pid: string; size?: '' | 'sm' | 'xs' | 'lg'; style?: React.CSSProperties }) {
+const imgAspects = new Map<string, number>();
+
+/** An image fitted into its box (cover), centred on crop.x/y and zoomed by crop.z. The box must be position: relative. */
+export function FramedImg({ url, crop, boxAspect = 1, className }: { url: string; crop: PhotoCrop; boxAspect?: number; className?: string }) {
+  const [a, setA] = useState(imgAspects.get(url) || 0);
+  const ref = useRef<HTMLImageElement>(null);
+  const learn = (img: HTMLImageElement) => {
+    if (!img.naturalWidth) return;
+    const v = img.naturalWidth / img.naturalHeight;
+    imgAspects.set(url, v);
+    setA(v);
+  };
+  useEffect(() => {
+    if (ref.current?.complete) learn(ref.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
+  const r = frameRect((a || 1) / boxAspect, crop);
+  return (
+    <img
+      ref={ref}
+      src={url}
+      alt=""
+      draggable={false}
+      className={className}
+      onLoad={(e) => learn(e.currentTarget)}
+      style={{ position: 'absolute', maxWidth: 'none', width: r.w * 100 + '%', height: r.h * 100 + '%', left: r.left * 100 + '%', top: r.top * 100 + '%', opacity: a ? 1 : 0 }}
+    />
+  );
+}
+
+export function Avatar({ pid, size = '', style }: { pid: string; size?: '' | 'sm' | 'xs' | 'lg' | 'xl'; style?: React.CSSProperties }) {
   const data = useData((s) => s.data);
   const T = treeApi(data);
   const p = T.person[pid];
@@ -112,17 +143,12 @@ export function Avatar({ pid, size = '', style }: { pid: string; size?: '' | 'sm
   if (!p) return <span className={cls} aria-hidden="true">?</span>;
   if (p.photoMediaId) {
     const m = T.media[p.photoMediaId];
-    const url = m ? mediaUrl(m.thumb || m.file) : '';
+    const url = m ? mediaUrl(size === 'xl' ? m.file || m.thumb : m.thumb || m.file) : '';
     if (url) {
-      const face = m.faces.find((f) => f.personId === pid);
-      const S = 4; // zoom so the face fills the circle
-      const pos = face ? `${Math.max(0, Math.min(100, (face.x * S - 50) / (S - 1)))}% ${Math.max(0, Math.min(100, (face.y * S - 50) / (S - 1)))}%` : 'center';
       return (
-        <span
-          className={cls + ' img'}
-          aria-hidden="true"
-          style={{ backgroundImage: `url("${url}")`, backgroundSize: face ? `${S * 100}% auto` : 'cover', backgroundPosition: pos, ...style }}
-        />
+        <span className={cls + ' img'} aria-hidden="true" style={style}>
+          <FramedImg url={url} crop={defaultCrop(p, m)} />
+        </span>
       );
     }
   }

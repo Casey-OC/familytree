@@ -2,14 +2,24 @@
 // Every change is written straight away (autosave) inside one transaction.
 
 import type { Db, SqlValue, Stmt } from './db';
-import type { Citation, Fact, Hint, Media, Person, Place, Relationship, Source, Task, TreeData } from '../lib/types';
+import type { Citation, Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, TagStatus, Task, TreeData } from '../lib/types';
 
 const s = (v: SqlValue | undefined) => (v === null || v === undefined ? '' : String(v));
 const n = (v: SqlValue | undefined) => (v === null || v === undefined || v === '' ? null : Number(v));
 const b = (v: boolean) => (v ? 1 : 0);
 
+function parseCrop(v: string): PhotoCrop | null {
+  if (!v) return null;
+  try {
+    const c = JSON.parse(v);
+    return typeof c?.x === 'number' && typeof c?.y === 'number' && typeof c?.z === 'number' ? c : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadTree(db: Db): Promise<TreeData> {
-  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings] = await Promise.all([
+  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings, mtags] = await Promise.all([
     db.query('SELECT * FROM person'),
     db.query('SELECT * FROM relationship'),
     db.query('SELECT * FROM place'),
@@ -24,6 +34,7 @@ export async function loadTree(db: Db): Promise<TreeData> {
     db.query('SELECT * FROM hint'),
     db.query('SELECT * FROM task ORDER BY created_at DESC'),
     db.query('SELECT * FROM settings'),
+    db.query('SELECT * FROM media_tag'),
   ]);
   const citesByFact: Record<string, string[]> = {};
   for (const r of fc) (citesByFact[s(r.fact_id)] = citesByFact[s(r.fact_id)] || []).push(s(r.citation_id));
@@ -35,6 +46,7 @@ export async function loadTree(db: Db): Promise<TreeData> {
   const facesBy = group(faces, 'media_id');
   const mpBy = group(mp, 'media_id');
   const msBy = group(ms, 'media_id');
+  const tagBy = group(mtags, 'media_id');
   const st: Record<string, string> = {};
   for (const r of settings) st[s(r.key)] = s(r.value);
 
@@ -47,6 +59,10 @@ export async function loadTree(db: Db): Promise<TreeData> {
         sex: (s(r.sex) || 'U') as Person['sex'],
         living: !!Number(r.living),
         photoMediaId: r.photo_media_id ? s(r.photo_media_id) : null,
+        photoCrop: parseCrop(s(r.photo_crop)),
+        coverMediaId: r.cover_media_id ? s(r.cover_media_id) : null,
+        profileId: s(r.profile_id) || s(r.id),
+        accountEmail: s(r.account_email),
         avatar: s(r.avatar),
         privacy: (s(r.privacy) || 'Private') as Person['privacy'],
         notes: s(r.notes),
@@ -95,6 +111,8 @@ export async function loadTree(db: Db): Promise<TreeData> {
         faces: (facesBy[s(r.id)] || []).map((f) => ({ personId: s(f.person_id), x: Number(f.x_pct), y: Number(f.y_pct) })),
         people: (mpBy[s(r.id)] || []).map((f) => s(f.person_id)),
         sourceIds: (msBy[s(r.id)] || []).map((f) => s(f.source_id)),
+        addedBy: s(r.added_by),
+        tags: Object.fromEntries((tagBy[s(r.id)] || []).map((t) => [s(t.person_id), { status: (s(t.status) || 'shown') as TagStatus, by: s(t.tagged_by) }])),
       }),
     ),
     hints: hints.map((r): Hint => {
@@ -147,12 +165,16 @@ export class SqlLog {
 
   person(p: Person) {
     this.add(
-      `INSERT INTO person (id, given_names, surname, sex, living, photo_media_id, avatar, privacy, notes, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO person (id, given_names, surname, sex, living, photo_media_id, avatar, privacy, notes, updated_at, photo_crop, cover_media_id, profile_id, account_email)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET given_names=excluded.given_names, surname=excluded.surname, sex=excluded.sex,
          living=excluded.living, photo_media_id=excluded.photo_media_id, avatar=excluded.avatar, privacy=excluded.privacy,
-         notes=excluded.notes, updated_at=excluded.updated_at`,
-      [p.id, p.given, p.surname, p.sex, b(p.living), p.photoMediaId, p.avatar, p.privacy, p.notes, p.updatedAt || this.stamp],
+         notes=excluded.notes, updated_at=excluded.updated_at, photo_crop=excluded.photo_crop, cover_media_id=excluded.cover_media_id,
+         profile_id=excluded.profile_id, account_email=excluded.account_email`,
+      [
+        p.id, p.given, p.surname, p.sex, b(p.living), p.photoMediaId, p.avatar, p.privacy, p.notes, p.updatedAt || this.stamp,
+        p.photoCrop ? JSON.stringify(p.photoCrop) : '', p.coverMediaId ?? null, p.profileId || p.id, p.accountEmail || '',
+      ],
     );
     this.log('person', p.id, 'put');
   }
@@ -196,20 +218,25 @@ export class SqlLog {
   }
   media(m: Media) {
     this.add(
-      `INSERT INTO media (id, kind, file_path, thumb_path, scene, title, date_text, place_id, description, duration_s, mime, original_name, size_bytes, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO media (id, kind, file_path, thumb_path, scene, title, date_text, place_id, description, duration_s, mime, original_name, size_bytes, created_at, added_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, file_path=excluded.file_path, thumb_path=excluded.thumb_path,
          scene=excluded.scene, title=excluded.title, date_text=excluded.date_text, place_id=excluded.place_id,
          description=excluded.description, duration_s=excluded.duration_s, mime=excluded.mime,
-         original_name=excluded.original_name, size_bytes=excluded.size_bytes`,
-      [m.id, m.kind, m.file, m.thumb, m.scene, m.title, m.date, m.placeId || null, m.desc, m.duration, m.mime, m.originalName, m.sizeBytes, m.createdAt || this.stamp],
+         original_name=excluded.original_name, size_bytes=excluded.size_bytes, added_by=excluded.added_by`,
+      [m.id, m.kind, m.file, m.thumb, m.scene, m.title, m.date, m.placeId || null, m.desc, m.duration, m.mime, m.originalName, m.sizeBytes, m.createdAt || this.stamp, m.addedBy || ''],
     );
     this.add('DELETE FROM media_face WHERE media_id = ?', [m.id]);
     this.add('DELETE FROM media_person WHERE media_id = ?', [m.id]);
     this.add('DELETE FROM media_source WHERE media_id = ?', [m.id]);
+    this.add('DELETE FROM media_tag WHERE media_id = ?', [m.id]);
     m.faces.forEach((f) => this.add('INSERT INTO media_face (media_id, person_id, x_pct, y_pct) VALUES (?, ?, ?, ?)', [m.id, f.personId, f.x, f.y]));
     m.people.forEach((p) => this.add('INSERT OR IGNORE INTO media_person (media_id, person_id) VALUES (?, ?)', [m.id, p]));
     m.sourceIds.forEach((x) => this.add('INSERT OR IGNORE INTO media_source (media_id, source_id) VALUES (?, ?)', [m.id, x]));
+    Object.entries(m.tags || {}).forEach(([pid, t]) => {
+      if (m.faces.some((f) => f.personId === pid) || m.people.includes(pid))
+        this.add('INSERT OR REPLACE INTO media_tag (media_id, person_id, status, tagged_by) VALUES (?, ?, ?, ?)', [m.id, pid, t.status, t.by]);
+    });
     this.log('media', m.id, 'put');
   }
   hint(h: Hint) {

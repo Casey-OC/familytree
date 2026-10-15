@@ -31,6 +31,10 @@ export function sampleTree(): TreeData {
       sex,
       living: !!living,
       photoMediaId: null,
+      photoCrop: null,
+      coverMediaId: null,
+      profileId: id,
+      accountEmail: '',
       avatar: photo ? ('photo ' + tone).trim() : '',
       privacy: living ? 'Private' : 'Shared',
       notes: '',
@@ -203,7 +207,7 @@ export function sampleTree(): TreeData {
   const Md = (id: string, kind: Media['kind'], title: string, date: string, place: string, desc: string, faces: Media['faces'], scene: string, dur = 0, linked: string[] = []) =>
     media.push({
       id, kind, file: '', thumb: '', scene, title, date, placeId: place, desc, duration: dur, mime: '', originalName: '', sizeBytes: 0,
-      faces, people: linked, sourceIds: Object.keys(srcMedia).filter((s) => srcMedia[s].includes(id)), createdAt: now,
+      faces, people: linked, sourceIds: Object.keys(srcMedia).filter((s) => srcMedia[s].includes(id)), createdAt: now, addedBy: '', tags: {},
     });
   Md('m1', 'photo', 'John and Elizabeth, wedding portrait', '1884', 'redruth', 'Studio portrait taken in Redruth the year before they sailed.', [fc('p1', 38, 30), fc('p2', 62, 34)], 's2');
   Md('m2', 'photo', 'The Pascoes outside the Russell Street cottage', '1895', 'toowoomba', 'The whole family on the front step. Florence is on her mother’s knee.', [fc('p1', 20, 36), fc('p2', 40, 38), fc('p5', 58, 40), fc('p7', 72, 42), fc('p9', 84, 44), fc('p10', 40, 58)], 's3');

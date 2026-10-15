@@ -130,6 +130,22 @@ export const MIGRATIONS: string[] = [
     changed_at TEXT NOT NULL
   );
   `,
+  // v2 — profile pages: photo framing, cover photo, one-profile identity, who added photos, tag approval
+  `
+  ALTER TABLE person ADD COLUMN photo_crop TEXT NOT NULL DEFAULT '';
+  ALTER TABLE person ADD COLUMN cover_media_id TEXT;
+  ALTER TABLE person ADD COLUMN profile_id TEXT NOT NULL DEFAULT '';
+  ALTER TABLE person ADD COLUMN account_email TEXT NOT NULL DEFAULT '';
+  ALTER TABLE media ADD COLUMN added_by TEXT NOT NULL DEFAULT '';
+  CREATE TABLE media_tag (
+    media_id TEXT NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    person_id TEXT NOT NULL REFERENCES person(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'shown' CHECK (status IN ('pending','shown','hidden')),
+    tagged_by TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (media_id, person_id)
+  );
+  UPDATE person SET profile_id = id WHERE profile_id = '';
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
