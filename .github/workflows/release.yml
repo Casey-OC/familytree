@@ -1,7 +1,8 @@
 name: Build installers
 
-# Push a version tag (for example v0.1.0) to build Windows, macOS and Linux
-# installers. They appear as a draft GitHub Release for testing.
+# Push a version tag (for example v0.1.0), or run this workflow by hand from the
+# Actions tab, to build Windows, macOS and Linux installers. They appear as a
+# draft GitHub Release for testing.
 on:
   push:
     tags:
@@ -16,13 +17,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest' # Apple Silicon Macs
-            args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest' # Intel Macs
-            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04'
-            args: ''
           - platform: 'windows-latest'
+            args: ''
+          - platform: 'macos-latest' # one "universal" app for both Apple Silicon and Intel Macs
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
             args: ''
     runs-on: ${{ matrix.platform }}
     steps:
@@ -31,13 +30,18 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 22
           cache: npm
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
 
       - name: Linux build dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -48,8 +52,12 @@ jobs:
       - name: Install app dependencies
         run: npm ci
 
+      - name: Run tests
+        if: matrix.platform == 'ubuntu-22.04'
+        run: npm test
+
       - name: Build and upload installers
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Code signing — add these secrets once certificates exist (see docs/HANDOVER.md §8):
@@ -62,7 +70,16 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'Family Tree v__VERSION__'
-          releaseBody: 'Download the installer for your computer from the assets below.'
+          releaseBody: |
+            Download the installer for your computer from **Assets** below.
+
+            **Windows:** download the file ending in `_x64-setup.exe` and double-click it. These test builds aren't signed yet, so Windows may show "Windows protected your PC" — click **More info**, then **Run anyway**. (The `.msi` file is an alternative installer that does the same thing.)
+
+            **Mac:** download the `.dmg`, open it and drag Family Tree into Applications. The first time, right-click (or Control-click) the app and choose **Open**, then **Open** again.
+
+            **Linux:** use the `.AppImage` or `.deb`.
+
+            Your tree is saved on your computer and keeps working without the internet.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

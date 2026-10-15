@@ -1,0 +1,120 @@
+/* Additions beyond the prototype: real photos, extra controls, and phone layouts. */
+
+.app input[list] { width: 100%; }
+.app select { max-width: 100%; }
+
+/* real photos */
+.av.img { background-size: cover; background-position: center; color: transparent; }
+.thumbimg { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--surface2); }
+.mtile .missing, .thumbmissing { display: flex; align-items: center; justify-content: center; aspect-ratio: 4/3; background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 700; padding: 8px; text-align: center; }
+.mediabox { position: relative; border-radius: 12px; overflow: hidden; background: var(--surface2); line-height: 0; }
+.mediabox img { width: 100%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
+.mediabox.tagging { cursor: crosshair; outline: 3px solid var(--gold); }
+.mediabox .face { line-height: 1.2; }
+.face button.fx { position: absolute; right: -10px; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: #1E231F; color: #FFF7E2; font-size: 12px; line-height: 20px; text-align: center; display: none; }
+.mediabox.tagging .face button.fx { display: block; }
+.docframe { width: 100%; height: 420px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+audio.native { width: 100%; }
+
+/* small helpers */
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+.linkbtn { color: var(--pri); font-weight: 700; }
+.linkbtn:hover { text-decoration: underline; }
+.xbtn { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); flex: none; }
+.xbtn:hover { background: var(--surface2); color: var(--bad); }
+.phasechip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--gold-soft); color: var(--gold-text); }
+.soon { max-width: 640px; margin: 40px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.soon ul { text-align: left; margin: 0; padding-left: 20px; color: var(--muted); }
+.soon li { margin: 4px 0; }
+.busy { position: absolute; inset: 0; z-index: 120; background: rgba(25, 22, 15, 0.35); display: flex; align-items: center; justify-content: center; }
+.busy > div { background: var(--surface); color: var(--text); border-radius: 14px; padding: 18px 22px; font-weight: 700; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: center; }
+.spinner { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--pri-soft); border-top-color: var(--pri); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.problems { max-height: 220px; overflow: auto; }
+.dupe-list { max-height: 160px; overflow: auto; font-size: 14px; }
+.kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: var(--surface2); }
+.shortcut-list { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; }
+.empty-hero { flex: 1; display: flex; align-items: center; justify-content: center; }
+.side-foot .ok { color: var(--ok); }
+.table td .btn + .btn { margin-left: 6px; }
+.fieldnote { font-size: 13px; color: var(--muted); font-weight: 400; }
+.persondetails { display: flex; gap: 6px; flex-wrap: wrap; }
+.tc-main img { display: none; }
+
+/* bottom navigation — phones and narrow windows */
+.bottomnav { display: none; }
+.morebtn { display: none; }
+
+@media (max-width: 820px) {
+  .app { font-size: 16px; }
+  .sidebar { display: none; }
+  .bottomnav {
+    display: grid; grid-template-columns: repeat(5, 1fr); flex: none; background: var(--surface);
+    border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); z-index: 45;
+  }
+  .bottomnav button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 56px; justify-content: center; font-size: 12px; font-weight: 700; color: var(--muted); border-radius: 10px; }
+  .bottomnav button.on { color: var(--pri); background: var(--pri-soft); }
+  .topbar { height: auto; min-height: 56px; padding: 6px 10px; gap: 6px; padding-top: calc(6px + env(safe-area-inset-top)); }
+  .ts { width: auto; }
+  .ts-btn > span:not(.ts-mark), .ts-btn > svg { display: none; }
+  .topbar .btn.primary .lbl, .syncchip { display: none; }
+  .topbar .btn.primary { padding: 0 12px; }
+  .search { max-width: none; }
+  .search input { height: 40px; }
+  .main.pinned .view { margin-right: 0; }
+  .panel { width: 100%; top: 0; border-left: 0; }
+  .page { padding: 16px 14px 32px; gap: 16px; }
+  .page-head { flex-wrap: wrap; align-items: flex-start; }
+  .h1 { font-size: 24px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .span2 { grid-column: auto; }
+  .tablewrap { overflow-x: auto; }
+  .table { min-width: 640px; }
+  .first-cards { grid-template-columns: minmax(0, 1fr); }
+  .first-inner .h1 { font-size: 28px; }
+  .fcard { min-height: 0; }
+  .thgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hintwrap { grid-template-columns: minmax(0, 1fr); }
+  .frow { grid-template-columns: minmax(0, 1fr); }
+  .minihelp, .legend { display: none; }
+  .toolbar { padding: 8px 10px; gap: 8px; }
+  .toast { left: 12px; right: 12px; transform: none; bottom: 84px; }
+  .modal { padding: 20px; }
+  .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kv { grid-template-columns: 120px minmax(0, 1fr); }
+}
+
+/* printing: charts and the family history book */
+.printroot { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body, #root { height: auto !important; overflow: visible !important; background: #fff !important; }
+  #root { display: none !important; }
+  .printroot { display: block; color: #1d1d1b; font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 11pt; }
+  .printpage { page-break-after: always; break-after: page; position: relative; min-height: 250mm; }
+  .printpage:last-child { page-break-after: auto; break-after: auto; }
+  .printpage svg { width: 100%; height: auto; max-height: 230mm; }
+  .printpage footer { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 9pt; color: #6a6458; }
+  .printpage .ftx { fill: #1d1d1b; }
+  .ph1, .bk-h { font-family: 'Literata', Georgia, serif; font-size: 20pt; font-weight: 600; margin: 0 0 6mm; }
+  .bk-title { text-align: center; padding-top: 70mm; }
+  .bk-title h1 { font-family: 'Literata', Georgia, serif; font-size: 30pt; margin: 0 0 4mm; }
+  .bk-title h2 { font-family: 'Literata', Georgia, serif; font-weight: 400; font-size: 16pt; margin: 0 0 10mm; }
+  .bk-band { height: 4mm; background: repeating-linear-gradient(90deg, #b7862c 0 14px, transparent 14px 20px, #1f4d3a 20px 26px, transparent 26px 32px); margin-bottom: 20mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bk-muted { color: #6a6458; }
+  .bk-table { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
+  .bk-table th, .bk-table td { text-align: left; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #e3d9c4; vertical-align: top; }
+  .bk-table th { white-space: nowrap; width: 1%; }
+  .bk-conf { color: #6a6458; font-size: 9pt; white-space: nowrap; }
+  .bk-note { font-style: italic; color: #4f564c; border-left: 1mm solid #e3d9c4; padding-left: 3mm; }
+  .bk-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .bk-photos figure { margin: 0; }
+  .bk-photos img, .bk-photos .scene { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 2mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bk-photos figcaption { font-size: 9.5pt; margin-top: 1.5mm; }
+  .bk-src li { margin-bottom: 2mm; }
+  .bk-index { columns: 2; column-gap: 8mm; font-size: 10pt; }
+  .bk-index div { break-inside: avoid; margin-bottom: 1mm; }
+  .fanseg, .pbox rect, .printpage rect, .printpage path { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
