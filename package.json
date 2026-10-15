@@ -1,7 +1,7 @@
 {
   "name": "familytree",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
     "@tauri-apps/plugin-dialog": "2.8.3",
     "@tauri-apps/plugin-opener": "2.7.2",
     "immer": "10.1.3",
+    "maplibre-gl": "4.7.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sql.js": "1.13.0",

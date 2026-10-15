@@ -205,6 +205,7 @@ function BackupTab() {
         <p className="muted small" style={{ margin: 0 }}>
           The newest 20 backups are kept, including your photos and documents.
         </p>
+        <MapCacheRow />
       </section>
       <SecurityCard />
     </div>
@@ -289,5 +290,31 @@ function AppearanceTab() {
         </label>
       </section>
     </>
+  );
+}
+
+function MapCacheRow() {
+  const [size, setSize] = useState<number | null>(null);
+  useEffect(() => {
+    platform.mapCacheInfo().then(setSize).catch(() => setSize(null));
+  }, []);
+  if (!platform.isTauri()) return null;
+  return (
+    <div className="toggle">
+      <span style={{ flex: 1 }}>
+        <span className="li-t">Saved map areas</span>
+        <span className="li-s">{size === null ? 'Checking…' : fmtBytes(size) + ' kept so maps work offline (up to 400 MB)'}</span>
+      </span>
+      <button
+        className="btn sm"
+        onClick={async () => {
+          await platform.mapCacheClear();
+          setSize(0);
+          toast('Saved map areas cleared');
+        }}
+      >
+        Clear
+      </button>
+    </div>
   );
 }

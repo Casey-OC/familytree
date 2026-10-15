@@ -4,12 +4,14 @@ import { openPerson, updatePlace } from '../../data/actions';
 import { treeApi } from '../../lib/family';
 import { dateLabel } from '../../lib/dates';
 import { Icon } from '../../components/ui';
+import { FindOnMap } from '../map/Geocode';
 
 export function PlacePanel({ id }: { id: string }) {
   const data = useData((s) => s.data);
   const T = treeApi(data);
   const p = T.place[id];
   const [editing, setEditing] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [d, setD] = useState({ name: p.name, hist: p.hist, lat: p.lat?.toString() || '', lon: p.lon?.toString() || '' });
   const events = data.facts.filter((f) => f.placeId === id).sort((a, b) => (a.sortYear || 9999) - (b.sortYear || 9999));
   const media = data.media.filter((m) => m.placeId === id);
@@ -64,11 +66,19 @@ export function PlacePanel({ id }: { id: string }) {
             </button>
           </div>
         </div>
+      ) : finding ? (
+        <FindOnMap place={p} onDone={() => setFinding(false)} />
       ) : (
-        <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => setEditing(true)}>
-          <Icon name="edit" sm />
-          Edit place
-        </button>
+        <div className="row">
+          <button className="btn sm" onClick={() => setEditing(true)}>
+            <Icon name="edit" sm />
+            Edit place
+          </button>
+          <button className="btn sm" onClick={() => setFinding(true)}>
+            <Icon name="map" sm />
+            {p.lat === null ? 'Find on map' : 'Change map position'}
+          </button>
+        </div>
       )}
       <h3 className="h3">
         {events.length} event{events.length === 1 ? '' : 's'} here

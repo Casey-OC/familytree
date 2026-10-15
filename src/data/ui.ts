@@ -39,7 +39,8 @@ export type Modal =
   | { kind: 'setPassword' }
   | { kind: 'changePassword' }
   | { kind: 'removePassword' }
-  | { kind: 'encrypt'; on: boolean };
+  | { kind: 'encrypt'; on: boolean }
+  | { kind: 'geocodeAll' };
 
 export interface UiState {
   screen: Screen;

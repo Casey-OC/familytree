@@ -11,6 +11,7 @@ mod media;
 #[cfg(desktop)]
 mod menu;
 mod storage;
+mod tiles;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,6 +20,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(db::DbState::default())
         .manage(crypto::KeyState::default())
+        .register_asynchronous_uri_scheme_protocol("tilecache", tiles::handle)
         .setup(|app| {
             #[cfg(desktop)]
             menu::install(app)?;
@@ -42,6 +44,9 @@ pub fn run() {
             storage::file_write_text,
             media::media_import,
             media::media_remove,
+            tiles::map_cache_info,
+            tiles::map_cache_clear,
+            tiles::geocode,
             backup::backup_now,
             backup::backup_list,
             backup::backup_restore,

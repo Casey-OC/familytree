@@ -7,6 +7,7 @@ import { treeApi } from '../lib/family';
 import { SOURCE_TYPES } from '../lib/types';
 import { ModalFrame, PlaceInput } from '../components/ui';
 import { THEMES } from '../lib/themes';
+import { GeocodeAllModal } from './map/Geocode';
 import { ChangePasswordModal, EncryptModal, RemovePasswordModal, SetPasswordModal } from './security/Security';
 
 export function Modals() {
@@ -40,6 +41,8 @@ export function Modals() {
       return <RemovePasswordModal close={close} />;
     case 'encrypt':
       return <EncryptModal on={modal.on} close={close} />;
+    case 'geocodeAll':
+      return <GeocodeAllModal close={close} />;
     case 'comingSoon':
       return (
         <ModalFrame label={modal.title} onClose={close}>
