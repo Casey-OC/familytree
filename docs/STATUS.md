@@ -1,6 +1,6 @@
 # Build status
 
-Updated 16 Oct 2026 (v0.7.0).
+Updated 16 Oct 2026 (v0.8.0).
 
 ## Done
 
@@ -48,6 +48,11 @@ Updated 16 Oct 2026 (v0.7.0).
 - Invites are matched on the invitee's confirmed email; the invitation email is sent from the owner's own email program (no server email needed).
 - Approved life events become Probable facts cited to a "Family Wall post" source.
 - Builds read `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` GitHub secrets.
+
+**Family titles, story dates, private messages**: built (v0.8.0).
+- Family titles (`src/lib/kinship.ts`): closest-shared-ancestor calculator for blood relations (great-/half-/Nth cousin X removed), partners, in-laws, step relations, and "Father of your daughter-in-law" one step out; relative to you or the home person. Shown on tree cards, panel, profile, People, wall members, messages.
+- Life stories: date qualifiers and "at N years old" (`dateFromAge`, `storyWhen` in `src/lib/stories.ts`); database v4.
+- Private messages: `supabase/migrations/0002_private_messages.sql` (participants-only RLS; contacts = people sharing a wall), `src/messages/` (Supabase + demo backends, store with offline queue), `src/features/messages/MessagesPage.tsx`. 55 privacy checks in total.
 
 ## Next
 
