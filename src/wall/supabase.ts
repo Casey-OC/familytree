@@ -127,6 +127,7 @@ export function supabaseBackend(accountId: string): WallBackend {
     invitedAt: str(r.invited_at),
     joinedAt: str(r.joined_at),
     online: !!r.online,
+    userId: r.user_id ? str(r.user_id) : undefined,
   });
 
   return {

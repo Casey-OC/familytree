@@ -2,6 +2,7 @@
 // cover photo, profile photo, about, photos (theirs and ones they're tagged in), family and life story.
 
 import { useMemo, useState } from 'react';
+import { messagePeople, useMessages } from '../../messages/store';
 import { titlePhrase } from '../../lib/kinship';
 import { useData } from '../../data/store';
 import { setUi, useUi, type ProfileTab } from '../../data/ui';
@@ -33,6 +34,7 @@ export function ProfilePage() {
   const tab = useUi((s) => s.profileTab);
   const back = useUi((s) => s.profileBack);
   const T = treeApi(data);
+  const contact = useMessages((m) => m.contacts.find((k) => k.personId && k.personId === pid));
   const dupes = useMemo(() => findDuplicatePeople(data).filter((x) => x.a === pid || x.b === pid), [data, pid]);
   const p = T.person[pid];
   if (!p) {
@@ -144,6 +146,17 @@ export function ProfilePage() {
               <Icon name="edit" sm />
               Edit facts
             </button>
+            {contact && (
+              <button
+                className="btn sm"
+                onClick={async () => {
+                  if (await messagePeople([contact.userId])) setUi({ section: 'messages' });
+                }}
+              >
+                <Icon name="message" sm />
+                Message
+              </button>
+            )}
             <button className="btn sm ghost" onClick={() => setUi({ modal: { kind: 'merge', keep: pid, other: '' } })}>
               Merge with a duplicate…
             </button>

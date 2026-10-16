@@ -31,6 +31,7 @@ export interface WallMember {
   invitedAt: string;
   joinedAt: string;
   online: boolean;
+  userId?: string; // their account, for private messages (accepted members only)
 }
 
 export interface LifeEvent {

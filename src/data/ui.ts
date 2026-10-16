@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
-export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile';
+export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile' | 'messages';
 export type ProfileTab = 'overview' | 'timeline' | 'stories' | 'photos' | 'family' | 'sources';
 export type Screen = 'loading' | 'auth' | 'recovery' | 'about' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
@@ -45,6 +45,7 @@ export type Modal =
   | { kind: 'choosePhoto'; pid: string; purpose: 'profile' | 'cover' }
   | { kind: 'merge'; keep: string; other: string }
   | { kind: 'story'; pid: string; id?: string }
+  | { kind: 'newMessage'; userIds?: string[] }
   | { kind: 'wallInvite'; pid?: string }
   | { kind: 'wallInviteSent'; name: string; email: string; wallName: string }
   | { kind: 'wallAccept'; invite: import('../wall/types').Invite; preview?: boolean };
