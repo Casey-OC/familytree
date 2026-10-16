@@ -274,6 +274,7 @@ begin
 end $$;
 
 -- Who's on the wall, showing only what each person has chosen to share.
+drop function if exists public.wall_directory(uuid); -- 0002 adds a column; drop first so re-running this file is safe
 create or replace function public.wall_directory(t uuid)
 returns table (member_id uuid, person_id text, person_name text, status text, is_me boolean,
                can_post boolean, can_photos boolean, can_suggest boolean,
