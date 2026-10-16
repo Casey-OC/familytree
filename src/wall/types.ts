@@ -40,7 +40,20 @@ export interface LifeEvent {
   place: string;
 }
 
-export type PostType = 'text' | 'photo' | 'life';
+export type PostType = 'text' | 'photo' | 'life' | 'recipe';
+
+/** A recipe shared on the wall. It travels with the post so anyone can save a copy to their cookbook. */
+export interface WallRecipe {
+  title: string;
+  whose: string; // "Joan Ellis"
+  category: string;
+  servings: string;
+  time: string;
+  ingredients: string;
+  method: string;
+  story: string;
+  date: string;
+}
 export type LifeStatus = 'pending' | 'approved' | 'declined' | null;
 
 export interface WallComment {
@@ -67,6 +80,7 @@ export interface WallPost {
   photoScene?: string; // demo wall illustration
   life: LifeEvent | null;
   lifeStatus: LifeStatus;
+  recipe?: WallRecipe | null;
   tags: { id: string; name: string }[];
   createdAt: string;
   removed: boolean;
@@ -101,6 +115,7 @@ export interface NewPost {
   photo?: Blob | null;
   photoAlt?: string;
   life?: LifeEvent | null;
+  recipe?: WallRecipe | null;
   suggestForTree?: boolean;
   tags: { id: string; name: string }[];
 }

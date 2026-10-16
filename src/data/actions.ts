@@ -8,7 +8,7 @@ import { newId } from './platform';
 import * as platform from './platform';
 import { treeApi } from '../lib/family';
 import { MONTHS, normaliseDate, todayLabel, yearOf } from '../lib/dates';
-import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
+import type { Fact, Hint, Media, Person, PhotoCrop, Place, Recipe, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
 import { HOME_EVENTS } from '../lib/types';
 import { mergeInto, mergeProblem, notDuplicateKey, notDuplicates, type FieldChoice, type MergeResult } from '../lib/merge';
 import type { SqlLog } from './repo';
@@ -272,6 +272,9 @@ export async function deletePerson(pid: string) {
       d.stories.forEach((s) => {
         delete s.people[pid];
         if (factIds.has(s.factId)) s.factId = '';
+      });
+      d.recipes.forEach((x) => {
+        x.people = x.people.filter((p) => p !== pid);
       });
       d.media.forEach((m) => {
         if (m.faces.some((f) => f.personId === pid) || m.people.includes(pid)) {
@@ -739,6 +742,12 @@ export async function deleteMedia(id: string) {
         }
       });
       d.media = d.media.filter((x) => x.id !== id);
+      d.stories.forEach((s) => {
+        s.mediaIds = s.mediaIds.filter((m) => m !== id);
+      });
+      d.recipes.forEach((x) => {
+        x.mediaIds = x.mediaIds.filter((m) => m !== id);
+      });
       sql.del('media', id);
     }),
   );
@@ -781,6 +790,7 @@ export async function mergePeople(keepId: string, otherId: string, choice: Field
       for (const id of r.changedFacts) sql.fact(byId(d.facts, id) as Fact);
       for (const id of r.changedTasks) sql.task(byId(d.tasks, id) as Task);
       for (const id of r.changedStories) sql.story(byId(d.stories, id) as Story);
+      for (const id of r.changedRecipes) sql.recipe(byId(d.recipes, id) as Recipe);
       for (const id of r.changedHints) sql.hint(byId(d.hints, id) as Hint);
       for (const id of r.changedMedia) sql.media(byId(d.media, id) as Media);
       for (const id of r.changedRels) sql.rel(byId(d.rels, id) as Relationship);
@@ -960,4 +970,87 @@ export async function addFactFromWall(
     }),
   );
   return ok;
+}
+
+// ---------- family recipes ----------
+export interface RecipeDraft {
+  id?: string;
+  title: string;
+  category: string;
+  servings: string;
+  time: string;
+  ingredients: string;
+  method: string;
+  story: string;
+  date: string;
+  place: string;
+  people: string[];
+  mediaIds: string[];
+  sharedBy?: string;
+}
+
+/** Saves a family recipe to this tree's cookbook. */
+export async function saveRecipe(f: RecipeDraft): Promise<string | null> {
+  if (!f.title.trim()) {
+    toast('Give the recipe a name first');
+    return null;
+  }
+  const id = f.id || newId();
+  const now = new Date().toISOString();
+  const { name } = me();
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      let x = d.recipes.find((r) => r.id === id);
+      if (!x) {
+        x = {
+          id,
+          title: '',
+          category: '',
+          servings: '',
+          time: '',
+          ingredients: '',
+          method: '',
+          story: '',
+          date: '',
+          placeId: '',
+          people: [],
+          mediaIds: [],
+          addedBy: name,
+          sharedBy: f.sharedBy || '',
+          createdAt: now,
+          updatedAt: now,
+        };
+        d.recipes.push(x);
+      }
+      Object.assign(x, {
+        title: f.title.trim(),
+        category: f.category.trim(),
+        servings: f.servings.trim(),
+        time: f.time.trim(),
+        ingredients: f.ingredients.replace(/\s+$/, ''),
+        method: f.method.replace(/\s+$/, ''),
+        story: f.story.trim(),
+        date: f.date.trim(),
+        placeId: ensurePlace(d, sql, f.place),
+        people: f.people.filter((p, i, a) => a.indexOf(p) === i && d.people.some((q) => q.id === p)),
+        mediaIds: f.mediaIds.filter((m) => d.media.some((q) => q.id === m)),
+        updatedAt: now,
+      });
+      d.recipes.sort((a, b) => a.title.localeCompare(b.title));
+      sql.recipe(x as Recipe);
+    }),
+  );
+  if (!ok) return null;
+  toast(f.id ? 'Recipe updated' : 'Recipe added to the family cookbook');
+  return id;
+}
+
+export async function deleteRecipe(id: string) {
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      d.recipes = d.recipes.filter((r) => r.id !== id);
+      sql.del('recipe', id);
+    }),
+  );
+  if (ok) toast('Recipe deleted');
 }

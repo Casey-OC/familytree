@@ -12,7 +12,8 @@ never leaves the owner's computer.
 3. **Create the wall's tables and privacy rules:** Supabase → **SQL Editor** → **New query** →
    paste all of [`migrations/0001_family_wall.sql`](migrations/0001_family_wall.sql) → **Run**.
    It's safe to run again. Then do the same with
-   [`migrations/0002_private_messages.sql`](migrations/0002_private_messages.sql) (private messages).
+   [`migrations/0002_private_messages.sql`](migrations/0002_private_messages.sql) (private messages)
+   and [`migrations/0003_wall_recipes.sql`](migrations/0003_wall_recipes.sql) (sharing recipes on the wall).
 4. **Where the confirmation link goes:** Authentication → **URL Configuration** →
    Site URL: `https://github.com/Casey-OC/familytree/releases`
 5. **Let people type a code instead of clicking a link (recommended):** Authentication →
@@ -24,7 +25,7 @@ automatically in builds made after the secrets exist.
 
 ## Testing the privacy rules
 
-`tests/run_tests.py` runs 55 checks (wall and private messages) against a local PostgreSQL with a small stand-in for
+`tests/run_tests.py` runs 60 checks (wall, recipes and private messages) against a local PostgreSQL with a small stand-in for
 Supabase's auth and storage:
 
 ```

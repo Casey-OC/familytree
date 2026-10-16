@@ -219,6 +219,7 @@ export function supabaseBackend(accountId: string): WallBackend {
           photoAlt: str(r.photo_alt),
           life: (r.life as WallPost['life']) || null,
           lifeStatus: (r.life_status as WallPost['lifeStatus']) || null,
+          recipe: (r.recipe as WallPost['recipe']) || null,
           tags: Array.isArray(r.tags) ? (r.tags as WallPost['tags']) : [],
           createdAt: str(r.created_at),
           removed: !!r.removed,
@@ -266,6 +267,7 @@ export function supabaseBackend(accountId: string): WallBackend {
         photo_alt: p.photoAlt || '',
         life: p.life || null,
         life_status: p.type === 'life' && p.suggestForTree && !w.isOwner ? 'pending' : null,
+        ...(p.type === 'recipe' ? { recipe: p.recipe } : {}),
         tags: p.tags,
       };
       const { data, error } = await c.from('posts').insert(row).select('*').single();
@@ -284,6 +286,7 @@ export function supabaseBackend(accountId: string): WallBackend {
         photoAlt: row.photo_alt,
         life: row.life,
         lifeStatus: row.life_status as WallPost['lifeStatus'],
+        recipe: p.type === 'recipe' ? p.recipe || null : null,
         tags: p.tags,
         createdAt: str(r.created_at),
         removed: false,

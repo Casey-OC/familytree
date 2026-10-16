@@ -13,6 +13,7 @@ import { dateLabel } from '../../lib/dates';
 import { closeFamily, visibilityLine, type CloseRelation } from '../../lib/profile';
 import { findDuplicatePeople } from '../../lib/merge';
 import { storiesAbout } from '../../lib/stories';
+import { RecipesTab, recipesOf } from '../recipes/Recipes';
 import { StoriesTab, StoryCard, TimelineTab } from './Stories';
 import type { Media, Person } from '../../lib/types';
 import { Avatar, Conf, Icon } from '../../components/ui';
@@ -59,11 +60,13 @@ export function ProfilePage() {
   const lives = [...T.factsOf(pid)].reverse().find((f) => f.type === 'Residence');
   const stories = storiesAbout(data, pid);
   const pendingStories = storiesAbout(data, pid, 'pending');
+  const recipes = recipesOf(data, pid);
   const tabs: [ProfileTab, string][] = [
     ['overview', 'Overview'],
     ['timeline', 'Timeline'],
     ['stories', `Life stories${stories.length ? ` (${stories.length})` : ''}`],
     ['photos', `Photos${photos.length ? ` (${photos.length})` : ''}`],
+    ['recipes', `Recipes${recipes.length ? ` (${recipes.length})` : ''}`],
     ['family', 'Family'],
     ['sources', 'Sources'],
   ];
@@ -340,6 +343,7 @@ export function ProfilePage() {
       {tab === 'family' && <FamilyTab T={T} pid={pid} />}
       {tab === 'timeline' && <TimelineTab T={T} pid={pid} canManage={canManage} />}
       {tab === 'stories' && <StoriesTab T={T} pid={pid} canManage={canManage} isSelf={isSelf} />}
+      {tab === 'recipes' && <RecipesTab T={T} pid={pid} />}
       {tab === 'sources' && <SourcesTab T={T} pid={pid} />}
     </div>
   );

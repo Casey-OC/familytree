@@ -181,6 +181,37 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE story ADD COLUMN date2_text TEXT NOT NULL DEFAULT '';
   ALTER TABLE story ADD COLUMN age_at INTEGER;
   `,
+  // v5 — family recipes
+  `
+  CREATE TABLE recipe (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT '',
+    category TEXT NOT NULL DEFAULT '',
+    servings TEXT NOT NULL DEFAULT '',
+    time_text TEXT NOT NULL DEFAULT '',
+    ingredients TEXT NOT NULL DEFAULT '',
+    method TEXT NOT NULL DEFAULT '',
+    story TEXT NOT NULL DEFAULT '',
+    date_text TEXT NOT NULL DEFAULT '',
+    place_id TEXT,
+    added_by TEXT NOT NULL DEFAULT '',
+    shared_by TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE recipe_person (
+    recipe_id TEXT NOT NULL REFERENCES recipe(id) ON DELETE CASCADE,
+    person_id TEXT NOT NULL REFERENCES person(id) ON DELETE CASCADE,
+    pos INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (recipe_id, person_id)
+  );
+  CREATE TABLE recipe_media (
+    recipe_id TEXT NOT NULL REFERENCES recipe(id) ON DELETE CASCADE,
+    media_id TEXT NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    pos INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (recipe_id, media_id)
+  );
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

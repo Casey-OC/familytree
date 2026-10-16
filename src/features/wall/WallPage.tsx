@@ -29,6 +29,7 @@ import {
 } from '../../wall/store';
 import { LIFE_TO_FACT, LIFE_TYPES, type Sharing, type WallMember, type WallPost } from '../../wall/types';
 import { Avatar, Icon, Seg, Switch } from '../../components/ui';
+import { toWallRecipe, WallRecipeCard } from './ShareRecipe';
 import { DateInput } from '../../components/DateInput';
 import { ConnectWall } from './Connect';
 
@@ -241,12 +242,17 @@ function Feed() {
   const left = !w.isOwner && me?.status === 'left';
   const myId = s.backend?.me()?.id || '';
   const visible = s.posts.filter((p) => !p.removed && !s.hidden.includes(p.id));
-  const posts = visible.filter((p) => filter === 'all' || (filter === 'life' ? p.type === 'life' : filter === 'photo' ? p.type === 'photo' : p.authorId === myId || p.queued));
+  const posts = visible.filter(
+    (p) =>
+      filter === 'all' ||
+      (filter === 'life' ? p.type === 'life' : filter === 'photo' ? p.type === 'photo' : filter === 'recipe' ? p.type === 'recipe' : p.authorId === myId || p.queued),
+  );
   const queued = s.queue.length;
   const filters: [typeof filter, string][] = [
     ['all', 'All'],
     ['life', 'Life events'],
     ['photo', 'Photos'],
+    ['recipe', 'Recipes'],
     ['mine', 'My posts'],
   ];
   return (
@@ -321,7 +327,13 @@ function Composer() {
     ? T.peopleSorted().map((p) => ({ id: p.id, name: T.nm(p.id), label: `${p.surname}, ${p.given}` }))
     : s.members.filter((m) => m.status === 'accepted').map((m) => ({ id: m.personId, name: m.name, label: m.name }));
   const set = (p: Partial<Draft>) => setD((x) => ({ ...x, ...p }));
-  const types: [Draft['type'], string][] = [['text', 'Status update'], ...(canPhoto ? ([['photo', 'Photo']] as [Draft['type'], string][]) : []), ['life', 'Life event']];
+  const types: [Draft['type'], string][] = [
+    ['text', 'Status update'],
+    ...(canPhoto ? ([['photo', 'Photo']] as [Draft['type'], string][]) : []),
+    ['life', 'Life event'],
+    ['recipe', 'Recipe'],
+  ];
+  const myRecipes = data.recipes || [];
 
   return (
     <div className="card composer">
@@ -356,10 +368,42 @@ function Composer() {
           </label>
         </div>
       )}
+      {d.type === 'recipe' && (
+        <div className="row" style={{ alignItems: 'flex-end' }}>
+          {myRecipes.length ? (
+            <label className="fl" style={{ flex: '1 1 260px' }}>
+              Recipe from your family cookbook
+              <select
+                value={myRecipes.find((r) => r.title === d.recipe?.title)?.id || ''}
+                onChange={(e) => {
+                  const r = myRecipes.find((x) => x.id === e.target.value);
+                  set({
+                    recipe: r ? toWallRecipe(T, r) : null,
+                    tags: r ? r.people.filter((p) => T.person[p] && (w.isOwner || tagOpts.some((o) => o.id === p))).map((p) => ({ id: p, name: T.nm(p) })) : d.tags,
+                  });
+                }}
+              >
+                <option value="">Choose a recipe…</option>
+                {myRecipes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <span className="muted">Your family cookbook is empty.</span>
+          )}
+          <button className="btn" onClick={() => setUi({ modal: { kind: 'editRecipe' } })}>
+            <Icon name="plus" sm />
+            Write a new recipe
+          </button>
+        </div>
+      )}
       <textarea
         value={d.body}
         onChange={(e) => set({ body: e.target.value })}
-        placeholder={d.type === 'life' ? 'Tell the family what happened…' : 'Share an update with the family…'}
+        placeholder={d.type === 'life' ? 'Tell the family what happened…' : d.type === 'recipe' ? 'Say something about it (optional)…' : 'Share an update with the family…'}
         aria-label="Post text"
       />
       {d.type === 'life' && !w.isOwner && (
@@ -527,6 +571,7 @@ function PostCard({ p }: { p: WallPost }) {
         </div>
       )}
       {p.body && <p className="post-text">{p.body}</p>}
+      {p.type === 'recipe' && <WallRecipeCard p={p} />}
       {p.type === 'photo' &&
         (p.photoUrl ? (
           <img className="post-img" src={p.photoUrl} alt={p.photoAlt || `Photo shared by ${p.authorName}`} loading="lazy" />
@@ -880,7 +925,7 @@ function Moderation() {
                   </span>
                 </span>
                 <span className="li-s" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                  {p.body || (p.type === 'photo' ? 'Photo' : '')}
+                  {p.body || (p.type === 'photo' ? 'Photo' : p.type === 'recipe' ? 'Recipe: ' + (p.recipe?.title || '') : '')}
                 </span>
               </span>
               <button className="btn sm ghost danger" onClick={() => removePost(p.id)}>

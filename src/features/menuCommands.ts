@@ -48,6 +48,7 @@ export async function handleMenu(id: string) {
     case 'go-people':
     case 'go-sources':
     case 'go-media':
+    case 'go-recipes':
     case 'go-research':
       needTree(() => go(id.slice(3) as 'home'));
       break;

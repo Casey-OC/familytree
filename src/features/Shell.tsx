@@ -14,6 +14,7 @@ import { TreeView } from './tree/TreeView';
 import { People } from './People';
 import { Sources } from './Sources';
 import { MediaPage } from './media/MediaPage';
+import { RecipesPage } from './recipes/Recipes';
 import { Research } from './Research';
 import { Settings } from './settings/Settings';
 import { Charts } from './charts/Charts';
@@ -29,6 +30,7 @@ const NAV: [Section, string, string][] = [
   ['messages', 'Messages', 'message'],
   ['sources', 'Sources', 'sources'],
   ['media', 'Media', 'media'],
+  ['recipes', 'Recipes', 'recipe'],
   ['map', 'Map', 'map'],
   ['charts', 'Charts and Reports', 'charts'],
   ['research', 'Research', 'research'],
@@ -92,6 +94,7 @@ export function Shell() {
           {section === 'messages' && <MessagesPage />}
           {section === 'sources' && <Sources />}
           {section === 'media' && <MediaPage />}
+          {section === 'recipes' && <RecipesPage />}
           {section === 'map' && <MapView />}
           {section === 'charts' && <Charts />}
           {section === 'research' && <Research />}

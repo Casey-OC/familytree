@@ -2,7 +2,7 @@
 // Every change is written straight away (autosave) inside one transaction.
 
 import type { Db, SqlValue, Stmt } from './db';
-import type { Citation, Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
+import type { Citation, Fact, Hint, Media, Person, PhotoCrop, Place, Recipe, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
 
 const s = (v: SqlValue | undefined) => (v === null || v === undefined ? '' : String(v));
 const n = (v: SqlValue | undefined) => (v === null || v === undefined || v === '' ? null : Number(v));
@@ -19,7 +19,7 @@ function parseCrop(v: string): PhotoCrop | null {
 }
 
 export async function loadTree(db: Db): Promise<TreeData> {
-  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings, mtags, stories, sp, sm] = await Promise.all([
+  const [people, rels, places, facts, sources, cites, fc, media, faces, mp, ms, hints, tasks, settings, mtags, stories, sp, sm, recipes, rp, rm] = await Promise.all([
     db.query('SELECT * FROM person'),
     db.query('SELECT * FROM relationship'),
     db.query('SELECT * FROM place'),
@@ -38,6 +38,9 @@ export async function loadTree(db: Db): Promise<TreeData> {
     db.query('SELECT * FROM story ORDER BY created_at'),
     db.query('SELECT * FROM story_person'),
     db.query('SELECT * FROM story_media ORDER BY pos'),
+    db.query('SELECT * FROM recipe ORDER BY title'),
+    db.query('SELECT * FROM recipe_person ORDER BY pos'),
+    db.query('SELECT * FROM recipe_media ORDER BY pos'),
   ]);
   const citesByFact: Record<string, string[]> = {};
   for (const r of fc) (citesByFact[s(r.fact_id)] = citesByFact[s(r.fact_id)] || []).push(s(r.citation_id));
@@ -52,6 +55,8 @@ export async function loadTree(db: Db): Promise<TreeData> {
   const tagBy = group(mtags, 'media_id');
   const spBy = group(sp, 'story_id');
   const smBy = group(sm, 'story_id');
+  const rpBy = group(rp, 'recipe_id');
+  const rmBy = group(rm, 'recipe_id');
   const st: Record<string, string> = {};
   for (const r of settings) st[s(r.key)] = s(r.value);
 
@@ -166,6 +171,26 @@ export async function loadTree(db: Db): Promise<TreeData> {
         authorEmail: s(r.author_email),
         people: Object.fromEntries((spBy[s(r.id)] || []).map((x) => [s(x.person_id), (s(x.status) || 'shown') as TagStatus])),
         mediaIds: (smBy[s(r.id)] || []).map((x) => s(x.media_id)),
+        createdAt: s(r.created_at),
+        updatedAt: s(r.updated_at),
+      }),
+    ),
+    recipes: recipes.map(
+      (r): Recipe => ({
+        id: s(r.id),
+        title: s(r.title),
+        category: s(r.category),
+        servings: s(r.servings),
+        time: s(r.time_text),
+        ingredients: s(r.ingredients),
+        method: s(r.method),
+        story: s(r.story),
+        date: s(r.date_text),
+        placeId: s(r.place_id),
+        people: (rpBy[s(r.id)] || []).map((x) => s(x.person_id)),
+        mediaIds: (rmBy[s(r.id)] || []).map((x) => s(x.media_id)),
+        addedBy: s(r.added_by),
+        sharedBy: s(r.shared_by),
         createdAt: s(r.created_at),
         updatedAt: s(r.updated_at),
       }),
@@ -299,10 +324,25 @@ export class SqlLog {
     x.mediaIds.forEach((m, i) => this.add('INSERT OR IGNORE INTO story_media (story_id, media_id, pos) VALUES (?, ?, ?)', [x.id, m, i]));
     this.log('story', x.id, 'put');
   }
+  recipe(x: Recipe) {
+    this.add(
+      `INSERT INTO recipe (id, title, category, servings, time_text, ingredients, method, story, date_text, place_id, added_by, shared_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET title=excluded.title, category=excluded.category, servings=excluded.servings, time_text=excluded.time_text,
+         ingredients=excluded.ingredients, method=excluded.method, story=excluded.story, date_text=excluded.date_text, place_id=excluded.place_id,
+         added_by=excluded.added_by, shared_by=excluded.shared_by, updated_at=excluded.updated_at`,
+      [x.id, x.title, x.category, x.servings, x.time, x.ingredients, x.method, x.story, x.date, x.placeId || null, x.addedBy, x.sharedBy, x.createdAt || this.stamp, x.updatedAt || this.stamp],
+    );
+    this.add('DELETE FROM recipe_person WHERE recipe_id = ?', [x.id]);
+    this.add('DELETE FROM recipe_media WHERE recipe_id = ?', [x.id]);
+    x.people.forEach((p, i) => this.add('INSERT OR IGNORE INTO recipe_person (recipe_id, person_id, pos) VALUES (?, ?, ?)', [x.id, p, i]));
+    x.mediaIds.forEach((m, i) => this.add('INSERT OR IGNORE INTO recipe_media (recipe_id, media_id, pos) VALUES (?, ?, ?)', [x.id, m, i]));
+    this.log('recipe', x.id, 'put');
+  }
   setting(key: string, value: string) {
     this.add('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
   }
-  del(table: 'person' | 'relationship' | 'place' | 'fact' | 'source' | 'citation' | 'media' | 'hint' | 'task' | 'story', id: string) {
+  del(table: 'person' | 'relationship' | 'place' | 'fact' | 'source' | 'citation' | 'media' | 'hint' | 'task' | 'story' | 'recipe', id: string) {
     this.add(`DELETE FROM ${table} WHERE id = ?`, [id]);
     this.log(table, id, 'delete');
   }
@@ -319,6 +359,7 @@ export class SqlLog {
     d.hints.forEach((x) => this.hint(x));
     d.tasks.forEach((x) => this.task(x));
     (d.stories || []).forEach((x) => this.story(x));
+    (d.recipes || []).forEach((x) => this.recipe(x));
     Object.entries(d.settings).forEach(([k, v]) => this.setting(k, v));
   }
 }

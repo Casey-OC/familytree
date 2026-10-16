@@ -206,6 +206,7 @@ export interface MergeResult {
   changedHints: string[];
   changedTasks: string[];
   changedStories: string[];
+  changedRecipes: string[];
   changedSettings: string[];
   movedFacts: number;
   movedPhotos: number;
@@ -239,6 +240,7 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
     changedHints: [],
     changedTasks: [],
     changedStories: [],
+    changedRecipes: [],
     changedSettings: [],
     movedFacts: 0,
     movedPhotos: 0,
@@ -377,6 +379,11 @@ export function mergeInto(d: TreeData, keepId: string, otherId: string, choice: 
       touched = true;
     }
     if (touched) r.changedStories.push(s.id);
+  }
+  for (const x of d.recipes || []) {
+    if (!x.people.includes(otherId)) continue;
+    x.people = x.people.map((p) => (p === otherId ? keepId : p)).filter((p, i, a) => a.indexOf(p) === i);
+    r.changedRecipes.push(x.id);
   }
 
   for (const key of ['home_person', 'self_person']) {

@@ -53,6 +53,7 @@ pub fn install(app: &mut App) -> tauri::Result<()> {
         .item(&item(&h, "go-people", "People", Some("CmdOrCtrl+4"))?)
         .item(&item(&h, "go-sources", "Sources", Some("CmdOrCtrl+5"))?)
         .item(&item(&h, "go-media", "Media", Some("CmdOrCtrl+6"))?)
+        .item(&item(&h, "go-recipes", "Recipes", None)?)
         .item(&item(&h, "go-research", "Research", Some("CmdOrCtrl+7"))?)
         .separator()
         .item(&item(&h, "toggle-dark", "Light or dark mode", Some("CmdOrCtrl+Shift+D"))?)
