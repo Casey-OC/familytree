@@ -1,6 +1,7 @@
 // The Family Wall: a private, Facebook-style feed for invited living relatives.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { titlePhrase } from '../../lib/kinship';
 import { useData } from '../../data/store';
 import { setUi, useUi } from '../../data/ui';
 import { openProfile } from '../../data/actions';
@@ -709,6 +710,7 @@ function Members() {
                   <span>
                     {m.name}
                     {m.isMe ? ' (you)' : ''}
+                    <KinTag pid={m.personId} />
                     {m.email && (
                       <span className="li-s" style={{ fontWeight: 400 }}>
                         {m.email}
@@ -970,4 +972,12 @@ export function myTown(): string {
   if (!self) return '';
   const r = [...T.factsOf(self)].reverse().find((f) => f.type === 'Residence' && f.placeId);
   return r ? T.placeName(r.placeId).split(',')[0] : '';
+}
+
+/** "Your cousin" next to a member's name, when they're in your tree. */
+function KinTag({ pid }: { pid: string }) {
+  const data = useData((d) => d.data);
+  const T = treeApi(data);
+  const phrase = pid && T.person[pid] ? titlePhrase(T, pid) : '';
+  return phrase && phrase !== 'You' ? <span className="li-s kin-line">{phrase}</span> : null;
 }

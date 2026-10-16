@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { titleAnchor, titlesFrom } from '../../lib/kinship';
 import { useData } from '../../data/store';
 import { setUi, useUi } from '../../data/ui';
 import { addRelModal, centreOn, openPerson } from '../../data/actions';
@@ -22,6 +23,8 @@ export function TreeView() {
   const centreRequest = useUi((s) => s.centreRequest);
   const fitRequest = useUi((s) => s.fitRequest);
   const T = treeApi(data);
+  const anchor = titleAnchor(T);
+  const kin = titlesFrom(T, anchor.id);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 600 });
   const drag = useRef<{ mx: number; my: number; x: number; y: number; moved: boolean; id: number } | null>(null);
@@ -320,7 +323,11 @@ export function TreeView() {
                   <Avatar pid={id} />
                   <span className="tc-text">
                     <span className="tc-name">{T.nm(id)}</span>
-                    <span className="tc-years">{T.years(id)}</span>
+                    <span className="tc-years">
+                      {T.years(id)}
+                      {kin.get(id) && kin.get(id)!.kind !== 'self' && <span className="tc-rel" title={kin.get(id)!.title}> · {kin.get(id)!.title}</span>}
+                      {kin.get(id)?.kind === 'self' && anchor.isYou && <span className="tc-rel"> · You</span>}
+                    </span>
                     <span className="tc-badges">
                       {unv > 0 && <span className="badge unv">? {unv} unverified</span>}
                       {hc > 0 && <span className="badge hint">{hc} hint</span>}

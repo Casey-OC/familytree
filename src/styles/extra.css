@@ -275,3 +275,8 @@ fieldset.parentrow legend { font-weight: 700; padding: 0 6px; color: var(--muted
 .invite-text { white-space: pre-wrap; font-family: inherit; font-size: 15px; background: var(--surface2); border-radius: 10px; padding: 12px 14px; margin: 0; max-height: 260px; overflow: auto; }
 .wallwrap .card.composer textarea { min-height: 90px; }
 @media (max-width: 1000px) { .wallwrap { grid-template-columns: 1fr; } }
+
+/* ---------- family titles ---------- */
+.tc-years { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.tc-rel { color: var(--gold-text); font-weight: 700; }
+.kin-line { font-weight: 700; color: var(--gold-text); }
