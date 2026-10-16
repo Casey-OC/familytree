@@ -739,6 +739,19 @@ function Members() {
                 <span className={'conf ' + (m.status === 'accepted' ? 'conf-proven' : 'conf-probable')}>{m.status === 'accepted' ? '✓ Wall member' : '~ Invite pending'}</span>
               </td>
               <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                {m.status === 'accepted' && !m.isMe && m.userId && (
+                  <button
+                    className="btn sm"
+                    onClick={async () => {
+                      const { messagePeople, startMessages } = await import('../../messages/store');
+                      await startMessages();
+                      if (await messagePeople([m.userId!])) setUi({ section: 'messages' });
+                    }}
+                  >
+                    <Icon name="message" sm />
+                    Message
+                  </button>
+                )}
                 {w.isOwner && !m.isMe && (
                   <>
                     {m.status === 'accepted' && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { MessagesPage, useUnreadMessages } from './messages/MessagesPage';
 import { WallPage } from './wall/WallPage';
 import { useWall } from '../wall/store';
 import { ProfilePage } from './profile/ProfilePage';
@@ -25,6 +26,7 @@ const NAV: [Section, string, string][] = [
   ['tree', 'Tree', 'tree'],
   ['people', 'People', 'people'],
   ['wall', 'Family Wall', 'wall'],
+  ['messages', 'Messages', 'message'],
   ['sources', 'Sources', 'sources'],
   ['media', 'Media', 'media'],
   ['map', 'Map', 'map'],
@@ -42,6 +44,13 @@ export function Shell() {
   const data = useData((s) => s.data);
   const T = treeApi(data);
   const pendingHints = data.hints.filter((h) => h.status === 'pending').length;
+  const unread = useUnreadMessages();
+  const treeIdNow = useData((d) => d.treeId);
+  const accountNow = useData((d) => d.account?.id);
+  useEffect(() => {
+    // Quietly start the wall and messages so their badges are up to date.
+    import('../wall/store').then((w) => w.startWall().then(() => import('../messages/store').then((m) => m.startMessages())));
+  }, [treeIdNow, accountNow]);
   const wallBadge = useWall((w) => (w.walls.find((x) => x.treeId === w.wallId)?.isOwner ? w.posts.filter((p) => p.lifeStatus === 'pending' && !p.removed).length : 0) + w.invites.length);
 
   return (
@@ -63,6 +72,7 @@ export function Shell() {
               <Icon name={ic} />
               {l}
               {k === 'research' && pendingHints > 0 && <span className="nb">{pendingHints}</span>}
+              {k === 'messages' && unread > 0 && <span className="nb" aria-label={`${unread} unread`}>{unread}</span>}
               {k === 'wall' && wallBadge > 0 && <span className="nb" aria-label={`${wallBadge} waiting`}>{wallBadge}</span>}
             </button>
           ))}
@@ -79,6 +89,7 @@ export function Shell() {
           {section === 'tree' && <TreeView />}
           {section === 'people' && <People />}
           {section === 'wall' && <WallPage />}
+          {section === 'messages' && <MessagesPage />}
           {section === 'sources' && <Sources />}
           {section === 'media' && <MediaPage />}
           {section === 'map' && <MapView />}

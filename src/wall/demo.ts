@@ -34,6 +34,7 @@ export function demoBackend(ownerName: string, people: Record<string, string>): 
     invitedAt: ago(invited),
     joinedAt: status === 'accepted' ? ago(invited - 2) : '',
     online,
+    userId: status === 'accepted' ? 'u-' + id : undefined,
   });
   const members: WallMember[] = [
     M('mb1', 'p22', 'peter.pascoe@example.com', 'accepted', all, 6000, true, '2 Nov', 'Cairns'),
@@ -199,7 +200,7 @@ export function demoBackend(ownerName: string, people: Record<string, string>): 
       // In the demo, "accepting" previews what the relative sees and makes them a member.
       const m = members.find((x) => x.id === inv.memberId);
       if (!m) return;
-      Object.assign(m, { status: 'accepted', sharing: s, birthday: s.birthday ? birthday : '', location: s.location ? location : '', joinedAt: new Date().toISOString() });
+      Object.assign(m, { userId: 'u-' + m.id, status: 'accepted', sharing: s, birthday: s.birthday ? birthday : '', location: s.location ? location : '', joinedAt: new Date().toISOString() });
     },
     setSharing: async () => undefined,
     leave: async () => undefined,

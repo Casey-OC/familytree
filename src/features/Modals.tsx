@@ -16,6 +16,7 @@ import { ChangePasswordModal } from './account/Account';
 import { AdjustPhotoModal, ChoosePhotoModal } from './profile/PhotoModals';
 import { MergeModal } from './profile/Merge';
 import { StoryModal } from './profile/Stories';
+import { NewMessageModal } from './messages/MessagesPage';
 import { WallAcceptModal, WallInviteModal, WallInviteSentModal } from './wall/WallModals';
 
 export function Modals() {
@@ -49,6 +50,8 @@ export function Modals() {
       return <GeocodeAllModal close={close} />;
     case 'adjustPhoto':
       return <AdjustPhotoModal pid={modal.pid} close={close} />;
+    case 'newMessage':
+      return <NewMessageModal userIds={modal.userIds} close={close} />;
     case 'wallInvite':
       return <WallInviteModal pid={modal.pid} close={close} />;
     case 'wallInviteSent':

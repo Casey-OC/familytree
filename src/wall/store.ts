@@ -119,6 +119,7 @@ export async function wallConnected() {
 }
 
 export async function disconnectWall() {
+  import('../messages/store').then((m) => m.stopMessages());
   unsubscribe?.();
   unsubscribe = null;
   await supa.disconnect(accountId());

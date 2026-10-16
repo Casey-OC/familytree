@@ -35,6 +35,12 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="M16 14.6c2.6.1 4.6 1.8 5.5 4.9" />
     </>
   ),
+  message: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 7 8.5 6 8.5-6" />
+    </>
+  ),
   wall: <path d="M4 5h16v11H9l-5 4z" />,
   sources: <path d="M4 4.5h6a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4zM20 4.5h-6a2 2 0 0 0-2 2V20a2 2 0 0 1 2-2h6z" />,
   media: (
