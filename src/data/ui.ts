@@ -3,8 +3,8 @@
 import { create } from 'zustand';
 import type { Qualifier, Quality } from '../lib/types';
 
-export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile' | 'messages';
-export type ProfileTab = 'overview' | 'timeline' | 'stories' | 'photos' | 'family' | 'sources';
+export type Section = 'home' | 'tree' | 'people' | 'wall' | 'sources' | 'media' | 'map' | 'charts' | 'research' | 'settings' | 'profile' | 'messages' | 'recipes';
+export type ProfileTab = 'overview' | 'timeline' | 'stories' | 'photos' | 'recipes' | 'family' | 'sources';
 export type Screen = 'loading' | 'auth' | 'recovery' | 'about' | 'import' | 'app';
 export type Panel = { kind: 'person' | 'source' | 'media' | 'place'; id: string } | null;
 export type PersonTab = 'facts' | 'relationships' | 'media' | 'notes' | 'sources' | 'research';
@@ -45,6 +45,9 @@ export type Modal =
   | { kind: 'choosePhoto'; pid: string; purpose: 'profile' | 'cover' }
   | { kind: 'merge'; keep: string; other: string }
   | { kind: 'story'; pid: string; id?: string }
+  | { kind: 'recipe'; id: string }
+  | { kind: 'editRecipe'; id?: string; pid?: string; draft?: Partial<import('./actions').RecipeDraft> }
+  | { kind: 'shareRecipe'; id: string }
   | { kind: 'newMessage'; userIds?: string[] }
   | { kind: 'wallInvite'; pid?: string }
   | { kind: 'wallInviteSent'; name: string; email: string; wallName: string }
@@ -87,7 +90,7 @@ export interface UiState {
   profilePid: string;
   profileTab: ProfileTab;
   wtab: 'feed' | 'members' | 'mod' | 'mine';
-  wfilter: 'all' | 'life' | 'photo' | 'mine';
+  wfilter: 'all' | 'life' | 'photo' | 'recipe' | 'mine';
   profileBack: Section;
 }
 

@@ -2,7 +2,7 @@
 // Ported from sample() in docs/prototype/Main.dc.html.
 
 import { yearOf } from './dates';
-import type { Citation, Fact, Hint, Media, Person, Place, Quality, Qualifier, Relationship, Source, Task, TreeData } from './types';
+import type { Citation, Fact, Hint, Media, Person, Place, Quality, Qualifier, Recipe, Relationship, Source, Task, TreeData } from './types';
 
 export const SAMPLE_TREE_NAME = 'Pascoe Family Tree';
 
@@ -271,8 +271,62 @@ export function sampleTree(): TreeData {
     T('t8', 'Ask Lynette about the Bates family photos', 'p28', '', 'To do', 'Low', ''),
   ];
 
+  const R = (id: string, title: string, category: string, people: string[], o: Partial<Recipe>): Recipe => ({
+    id,
+    title,
+    category,
+    people,
+    servings: '',
+    time: '',
+    ingredients: '',
+    method: '',
+    story: '',
+    date: '',
+    placeId: '',
+    mediaIds: [],
+    addedBy: 'Margaret Pascoe',
+    sharedBy: '',
+    createdAt: '2026-01-10T09:00:00.000Z',
+    updatedAt: '2026-01-10T09:00:00.000Z',
+    ...o,
+  });
+  const recipes: Recipe[] = [
+    R('r1', 'Cornish pasties', 'Mains', ['p2'], {
+      servings: '6 pasties',
+      time: '2 hours',
+      date: 'c. 1890',
+      placeId: 'stjust',
+      ingredients:
+        '500 g plain flour\n125 g lard\n125 g butter\nCold water\n500 g skirt steak, diced small\n2 potatoes, sliced thin\n1 swede, sliced thin\n1 onion, chopped\nSalt and plenty of pepper',
+      method:
+        'Rub the fats into the flour and bind with cold water. Rest the pastry for an hour.\nRoll out six rounds the size of a side plate.\nLayer potato, swede, onion and steak on one half. Season well.\nFold over and crimp along the side, never the top.\nBake at 200°C for 20 minutes, then 160°C for 40 minutes.',
+      story: 'Elizabeth brought this from St Just. John took two down the mine every day. She always marked his initials in the corner so he could find his among the others.',
+    }),
+    R('r2', 'Nan’s Christmas pudding', 'Christmas', ['p6', 'p10'], {
+      servings: '10',
+      time: '6 hours steaming',
+      date: '1920s',
+      ingredients:
+        '250 g raisins\n250 g sultanas\n125 g currants\n125 g suet\n125 g brown sugar\n125 g breadcrumbs\n60 g plain flour\n3 eggs\n1 tsp mixed spice\nHalf a cup of brandy\nA few silver threepences',
+      method:
+        'Soak the fruit in the brandy overnight.\nMix everything together. Everyone in the house gives it a stir and makes a wish.\nPress into a floured calico cloth and tie tightly.\nBoil for 6 hours, then hang it in the laundry until Christmas.\nBoil for another 2 hours on the day.',
+      story: 'Mary taught Florence, and Florence made it every year until 1985. The threepences went to whoever found them.',
+    }),
+    R('r3', 'Lamingtons', 'Baking', ['p14'], {
+      servings: '24 squares',
+      time: '1 hour',
+      date: '1960s',
+      placeId: 'brisbane',
+      ingredients: '1 day-old butter cake\n3 cups icing sugar\n⅓ cup cocoa\n15 g butter\n½ cup milk\n2 cups desiccated coconut',
+      method:
+        'Cut the cake into squares.\nMelt butter in the milk, then stir in the icing sugar and cocoa over hot water.\nDip each square in the icing, then roll in coconut.\nLeave on a rack to set.',
+      story: 'Margaret made these for every school fete and church stall.',
+    }),
+  ];
+
   return {
     stories: [],
+    recipes,
     people,
     rels,
     facts,

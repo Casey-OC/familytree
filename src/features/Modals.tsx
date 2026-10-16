@@ -16,6 +16,8 @@ import { ChangePasswordModal } from './account/Account';
 import { AdjustPhotoModal, ChoosePhotoModal } from './profile/PhotoModals';
 import { MergeModal } from './profile/Merge';
 import { StoryModal } from './profile/Stories';
+import { RecipeEditor, RecipeModal } from './recipes/Recipes';
+import { ShareRecipeModal } from './wall/ShareRecipe';
 import { NewMessageModal } from './messages/MessagesPage';
 import { WallAcceptModal, WallInviteModal, WallInviteSentModal } from './wall/WallModals';
 
@@ -60,6 +62,12 @@ export function Modals() {
       return <WallAcceptModal invite={modal.invite} preview={modal.preview} close={close} />;
     case 'story':
       return <StoryModal pid={modal.pid} id={modal.id} close={close} />;
+    case 'recipe':
+      return <RecipeModal id={modal.id} close={close} />;
+    case 'editRecipe':
+      return <RecipeEditor id={modal.id} pid={modal.pid} draft={modal.draft} close={close} />;
+    case 'shareRecipe':
+      return <ShareRecipeModal id={modal.id} close={close} />;
     case 'merge':
       return <MergeModal keep={modal.keep} other={modal.other} close={close} />;
     case 'choosePhoto':

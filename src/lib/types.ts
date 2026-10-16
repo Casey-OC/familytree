@@ -167,6 +167,7 @@ export interface TreeData {
   hints: Hint[];
   tasks: Task[];
   stories: Story[];
+  recipes: Recipe[];
   settings: Record<string, string>;
 }
 
@@ -181,6 +182,7 @@ export const emptyTree = (): TreeData => ({
   hints: [],
   tasks: [],
   stories: [],
+  recipes: [],
   settings: {},
 });
 
@@ -237,6 +239,26 @@ export interface Story {
   authorEmail: string;
   people: Record<string, TagStatus>; // who it's about; others' stories about an account holder wait for approval
   mediaIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A family recipe: whose it is, the recipe itself, scans or photos of the card, and the story behind it. */
+export interface Recipe {
+  id: string;
+  title: string;
+  category: string; // e.g. "Baking", "Christmas"
+  servings: string;
+  time: string; // e.g. "1 hour"
+  ingredients: string; // one per line
+  method: string; // one step per line (or paragraph)
+  story: string;
+  date: string; // when it dates from, e.g. "1950s"
+  placeId: string;
+  people: string[]; // whose recipe it is (first = main)
+  mediaIds: string[]; // photos of the dish or scans of the handwritten card
+  addedBy: string;
+  sharedBy: string; // "Helen Cho on the Family Wall" when saved from the wall
   createdAt: string;
   updatedAt: string;
 }

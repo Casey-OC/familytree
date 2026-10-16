@@ -9,7 +9,7 @@ import { treeApi } from '../lib/family';
 import { cacheGet, cacheSet } from './cache';
 import { demoBackend } from './demo';
 import * as supa from './supabase';
-import type { Invite, LifeEvent, NewInvite, NewPost, Permissions, PostType, Sharing, Wall, WallBackend, WallMember, WallPost } from './types';
+import type { Invite, LifeEvent, NewInvite, NewPost, Permissions, PostType, Sharing, Wall, WallBackend, WallMember, WallPost, WallRecipe } from './types';
 
 export type WallMode = 'loading' | 'off' | 'connect' | 'ready' | 'error';
 
@@ -253,6 +253,7 @@ export interface Draft {
   photoAlt: string;
   life: LifeEvent;
   suggestForTree: boolean;
+  recipe?: WallRecipe | null;
   tags: { id: string; name: string }[];
 }
 
@@ -260,7 +261,11 @@ export async function sendPost(d: Draft): Promise<boolean> {
   const b = get().backend;
   const w = currentWall();
   if (!b || !w) return false;
-  if (!d.body.trim() && !d.photo) {
+  if (d.type === 'recipe' && !d.recipe?.title) {
+    toast('Choose a recipe first');
+    return false;
+  }
+  if (!d.body.trim() && !d.photo && d.type !== 'recipe') {
     toast('Write something first');
     return false;
   }
@@ -276,6 +281,7 @@ export async function sendPost(d: Draft): Promise<boolean> {
     photoAlt: d.photoAlt,
     life: d.type === 'life' ? d.life : null,
     suggestForTree: d.type === 'life' && d.suggestForTree,
+    recipe: d.type === 'recipe' ? d.recipe || null : null,
     tags: d.tags,
   };
   const name = myWallName(w);
@@ -292,6 +298,7 @@ export async function sendPost(d: Draft): Promise<boolean> {
     photoAlt: post.photoAlt || '',
     life: post.life || null,
     lifeStatus: post.suggestForTree && !w.isOwner ? 'pending' : null,
+    recipe: post.recipe || null,
     tags: post.tags,
     createdAt: new Date().toISOString(),
     removed: false,

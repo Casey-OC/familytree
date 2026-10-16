@@ -74,11 +74,13 @@ export function ConnectWall() {
       ) : (
         <>
           <p style={{ margin: 0 }}>
-            We’ve sent an email to <span className="strong">{account.email}</span> to check it’s really you. Type the code from the email here — or click the link in it, then press
-            Continue.
+            We’ve sent an email to <span className="strong">{account.email}</span> to check it’s really you. Click the link in the email (it opens a web page you can close), then
+            come back here and press Continue.
           </p>
           <label className="fl">
-            Code from the email
+            <span>
+              Code from the email <span className="muted">(only if your email has one)</span>
+            </span>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}

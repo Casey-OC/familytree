@@ -31,6 +31,8 @@ run_file(os.path.join(HERE, '..', 'migrations', '0001_family_wall.sql'))
 run_file(os.path.join(HERE, '..', 'migrations', '0001_family_wall.sql'))  # safe to run twice
 run_file(os.path.join(HERE, '..', 'migrations', '0002_private_messages.sql'))
 run_file(os.path.join(HERE, '..', 'migrations', '0002_private_messages.sql'))
+run_file(os.path.join(HERE, '..', 'migrations', '0003_wall_recipes.sql'))
+run_file(os.path.join(HERE, '..', 'migrations', '0003_wall_recipes.sql'))
 psql('grant select, insert, update, delete on all tables in schema public to authenticated')
 owner, rel, stranger, sneaky = (str(uuid.uuid4()) for _ in range(4))
 psql(f"""insert into auth.users values
@@ -156,5 +158,17 @@ check('you can delete your own', psql(f"select deleted from messages where conve
 psql(f"select leave_conversation('{g}')", rel2)
 psql(f"insert into messages (conversation_id, body) values ('{g}', 'after leaving')", rel2, expect_error=True)
 check('after leaving a group you cannot post to it', True)
+
+print('Recipe posts')
+rp = psql(f"""insert into posts (tree_id, author_member_id, author_name, type, body, recipe) values ('{tree}', '{mid}', 'Helen Cho', 'recipe', 'Mum’s scones',
+  '{{"title": "Pumpkin scones", "whose": "Joan Ellis", "ingredients": "2 cups flour", "method": "Bake"}}') returning id""", rel)[0]
+check('members can share a recipe', psql(f"select recipe->>'title' from posts where id = '{rp}'", owner) == ['Pumpkin scones'])
+psql(f"insert into posts (tree_id, author_member_id, type, body) values ('{tree}', '{mid}', 'recipe', 'no recipe')", rel, expect_error=True)
+check('a recipe post must include the recipe', True)
+psql(f"""insert into posts (tree_id, author_member_id, type, body, recipe) values ('{tree}', '{mid}', 'recipe', '', '{{"title": ""}}')""", rel, expect_error=True)
+check('a recipe needs a name', True)
+psql(f"""insert into posts (tree_id, author_member_id, type, body, recipe) values ('{tree}', '{mid}', 'text', 'hi', '{{"title": "x"}}')""", rel, expect_error=True)
+check('only recipe posts carry a recipe', True)
+check('strangers cannot read recipes', psql('select recipe from posts where recipe is not null', stranger) == [])
 
 print(f'\nAll {ok} checks passed')

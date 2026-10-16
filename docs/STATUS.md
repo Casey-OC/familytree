@@ -1,6 +1,6 @@
 # Build status
 
-Updated 16 Oct 2026 (v0.8.0).
+Updated 16 Oct 2026 (v0.9.0).
 
 ## Done
 
@@ -53,6 +53,11 @@ Updated 16 Oct 2026 (v0.8.0).
 - Family titles (`src/lib/kinship.ts`): closest-shared-ancestor calculator for blood relations (great-/half-/Nth cousin X removed), partners, in-laws, step relations, and "Father of your daughter-in-law" one step out; relative to you or the home person. Shown on tree cards, panel, profile, People, wall members, messages.
 - Life stories: date qualifiers and "at N years old" (`dateFromAge`, `storyWhen` in `src/lib/stories.ts`); database v4.
 - Private messages: `supabase/migrations/0002_private_messages.sql` (participants-only RLS; contacts = people sharing a wall), `src/messages/` (Supabase + demo backends, store with offline queue), `src/features/messages/MessagesPage.tsx`. 55 privacy checks in total.
+
+**Navigation and family recipes**: built (v0.9.0).
+- Menu: the Family Wall is now **Home** (first, where you land after logging in or switching trees); the old Home page is **Overview** (second). Ctrl+1 Home, Ctrl+2 Overview.
+- Family recipes (`src/features/recipes/Recipes.tsx`): cookbook page with search and filters, recipe view, editor (whose recipe, ingredients with “:” headings, numbered method, story, photos or scans), print-to-PDF card, Recipes tab on profiles. Database v5 (`recipe`, `recipe_person`, `recipe_media`); recipes follow merges and deletions.
+- Recipes on the wall: `supabase/migrations/0003_wall_recipes.sql` adds a `recipe` post type; composer Recipe option, recipe card in posts, “Save to my cookbook” (`src/features/wall/ShareRecipe.tsx`). 60 privacy checks in total.
 
 ## Next
 

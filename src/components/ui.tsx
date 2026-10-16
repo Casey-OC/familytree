@@ -91,6 +91,8 @@ const PATHS: Record<string, React.ReactNode> = {
     </>
   ),
   upload: <path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14" />,
+  recipe: <path d="M6 13.5a4 4 0 1 1 3-6.6 4 4 0 0 1 6 0 4 4 0 1 1 3 6.6V20H6zM6 17h12" />,
+  print: <path d="M7 8V3.5h10V8M7 17H4.5V9.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5V17H17M7 14h10v6.5H7z" />,
   download: <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   play: <path d="M8 5v14l11-7z" />,

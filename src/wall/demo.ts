@@ -88,6 +88,23 @@ export function demoBackend(ownerName: string, people: Record<string, string>): 
       photoAlt: 'Family photo on the Cairns Esplanade, 1955',
       tags: T('p12', 'p13'),
     }),
+    P('mb2', 'recipe', 'Found Grandma Joan’s scone recipe in her old tin — the card is falling apart so I typed it up.', 9, {
+      likes: 8,
+      recipe: {
+        title: 'Joan’s pumpkin scones',
+        whose: 'Joan Ellis',
+        category: 'Baking',
+        servings: '12 scones',
+        time: '40 minutes',
+        ingredients: '1 tbsp butter\n½ cup sugar\n1 egg\n1 cup cold mashed pumpkin\n2½ cups self-raising flour\nPinch of salt\nA little milk',
+        method:
+          'Heat the oven to 220°C and grease a tray.\nCream the butter and sugar, then beat in the egg.\nStir in the pumpkin.\nFold in the flour and salt, adding milk if it’s too stiff.\nPat out 2 cm thick and cut into rounds.\nBake for 15 to 20 minutes until golden.',
+        story: 'Joan made these every Sunday. She said the trick is a hot oven and a light touch.',
+        date: '1950s',
+      },
+      tags: T('p13'),
+      comments: [C('mb3', 'I can still smell these! Saving to my cookbook.')],
+    }),
     P('mb4', 'text', 'Does anyone know who has Nana Phyllis’s recipe book? I’d love to scan it for the tree.', 26, {
       likes: 3,
       comments: [C('mb2', 'I think Graham’s kids took it — I’ll ask.')],
@@ -149,6 +166,7 @@ export function demoBackend(ownerName: string, people: Record<string, string>): 
         photoAlt: p.photoAlt || '',
         life: p.life || null,
         lifeStatus: null,
+        recipe: p.recipe || null,
         tags: p.tags,
       });
       posts.unshift(np);
