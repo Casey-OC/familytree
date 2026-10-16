@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { titleAnchor, titlesFrom } from '../lib/kinship';
 import { useData } from '../data/store';
 import { setUi, useUi } from '../data/ui';
 import { addRelModal, openPerson } from '../data/actions';
@@ -13,6 +14,8 @@ export function People() {
   const psort = useUi((s) => s.psort);
   const panel = useUi((s) => s.panel);
   const T = treeApi(data);
+  const anchor = titleAnchor(T);
+  const kin = titlesFrom(T, anchor.id);
 
   const rows = useMemo(() => {
     const q = pq.trim().toLowerCase();
@@ -72,6 +75,7 @@ export function People() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>{anchor.isYou ? 'To you' : `To ${T.first(anchor.id)}`}</th>
                 <th>Born</th>
                 <th>Birthplace</th>
                 <th>Died</th>
@@ -93,6 +97,7 @@ export function People() {
                         {p.surname}, {p.given}
                       </button>
                     </td>
+                    <td className="small">{kin.get(p.id)?.title || '—'}</td>
                     <td>{b ? dateLabel(b) : '—'}</td>
                     <td>{b ? T.placeName(b.placeId) || '—' : '—'}</td>
                     <td>{p.living ? 'Living' : de ? dateLabel(de) : '—'}</td>

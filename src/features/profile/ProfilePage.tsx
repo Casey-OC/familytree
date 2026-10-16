@@ -2,6 +2,7 @@
 // cover photo, profile photo, about, photos (theirs and ones they're tagged in), family and life story.
 
 import { useMemo, useState } from 'react';
+import { titlePhrase } from '../../lib/kinship';
 import { useData } from '../../data/store';
 import { setUi, useUi, type ProfileTab } from '../../data/ui';
 import { centreOn, go, openMedia, openPerson, openProfile, openSource, setCoverPhoto, setProfilePhoto, setTagStatus } from '../../data/actions';
@@ -102,6 +103,7 @@ export function ProfilePage() {
         <div className="pf-id">
           <h1 className="h1 pf-name">{T.nm(pid)}</h1>
           <div className="muted strong">{T.years(pid)}</div>
+          {!isSelf && titlePhrase(T, pid) && <div className="kin-line">{titlePhrase(T, pid)}</div>}
           <div className="chips">
             {isSelf && <span className="chip gold">You</span>}
             <span className="chip">{p.living ? 'Living' : 'Deceased'}</span>

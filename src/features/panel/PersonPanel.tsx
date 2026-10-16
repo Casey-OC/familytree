@@ -1,4 +1,5 @@
 import { useData } from '../../data/store';
+import { titlePhrase } from '../../lib/kinship';
 import { setUi, useUi, type PersonTab } from '../../data/ui';
 import {
   addRelModal,
@@ -49,6 +50,7 @@ export function PersonPanel({ pid }: { pid: string }) {
         <div style={{ minWidth: 0 }}>
           <h2 className="pname">{T.nm(pid)}</h2>
           <div className="muted strong">{T.years(pid)}</div>
+          {titlePhrase(T, pid) && <div className="kin-line">{titlePhrase(T, pid)}</div>}
           <div className="chips" style={{ marginTop: 6 }}>
             <span className="chip">{p.living ? 'Living' : 'Deceased'}</span>
             <span className={p.living ? 'chip' : 'chip person'}>{p.living ? 'Private' : 'Shared'}</span>
