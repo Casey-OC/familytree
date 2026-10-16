@@ -10,7 +10,7 @@ export async function openSample() {
   try {
     if (existing) await openTree(existing.id);
     else await createTree(sampleTree());
-    setUi({ screen: 'app', section: 'home', panel: null, treeView: 'family', menu: null });
+    setUi({ screen: 'app', section: 'wall', panel: null, treeView: 'family', menu: null });
     centreOn(useData.getState().data.settings.root_person || '');
   } catch (e) {
     toast('Couldn’t open the sample tree: ' + String((e as Error)?.message || e));

@@ -71,7 +71,7 @@ export function ProfilePage() {
 
   return (
     <div className="page profile">
-      <button className="btn sm ghost pf-back" onClick={() => go(back === 'profile' ? 'home' : back)}>
+      <button className="btn sm ghost pf-back" onClick={() => go(back === 'profile' ? 'wall' : back)}>
         ‹ Back
       </button>
       <div className={'pf-cover' + (coverUrl ? ' has' : '')}>

@@ -22,10 +22,10 @@ import { DetailPanel } from './panel/DetailPanel';
 import { handleMenu } from './menuCommands';
 
 const NAV: [Section, string, string][] = [
-  ['home', 'Home', 'home'],
+  ['wall', 'Home', 'home'],
+  ['home', 'Overview', 'charts'],
   ['tree', 'Tree', 'tree'],
   ['people', 'People', 'people'],
-  ['wall', 'Family Wall', 'wall'],
   ['messages', 'Messages', 'message'],
   ['sources', 'Sources', 'sources'],
   ['media', 'Media', 'media'],
@@ -113,10 +113,10 @@ function BottomNav() {
   const section = useUi((s) => s.section);
   const menu = useUi((s) => s.menu);
   const main: [Section, string, string][] = [
-    ['home', 'Home', 'home'],
+    ['wall', 'Home', 'home'],
     ['tree', 'Tree', 'tree'],
     ['people', 'People', 'people'],
-    ['research', 'Research', 'research'],
+    ['messages', 'Messages', 'message'],
   ];
   const inMore = !main.some(([k]) => k === section);
   return (
@@ -196,7 +196,7 @@ function TopBar() {
                 onClick={async () => {
                   setUi({ menu: null, panel: null, form: null });
                   await openTree(t.id);
-                  setUi({ section: 'home' });
+                  setUi({ section: 'wall' });
                 }}
               >
                 <span className="sr-t">{t.name}</span>

@@ -72,11 +72,11 @@ export function Home() {
       <div className="page">
         <div className="page-head">
           <div>
-            <h1 className="h1">
+            <h1 className="h1">Overview</h1>
+            <p className="lede">
               {greeting()}
-              {name ? ', ' + name : ''}
-            </h1>
-            <p className="lede">{data.settings.subtitle || data.settings.tree_name || 'Your family tree'}</p>
+              {name ? ', ' + name : ''} — {data.settings.subtitle || data.settings.tree_name || 'your family tree'}
+            </p>
           </div>
           <div className="spacer" />
           <button className="btn" onClick={() => go('people')}>

@@ -601,7 +601,7 @@ function ShortcutsModal({ close }: { close: () => void }) {
     ['Search people, places, sources', `${mod} K`],
     ['Add person', `${mod} N`],
     ['Upload a photo or document', `${mod} U`],
-    ['Home · Tree · People · Sources · Media · Research', `${mod} 1 – 6`],
+    ['Home · Overview · Tree · People · Sources · Media · Research', `${mod} 1 – 7`],
     ['Fit the tree to the window', `${mod} 0`],
     ['Back up now', `${mod} B`],
     ['Import / export GEDCOM', `${mod} I / ${mod} E`],

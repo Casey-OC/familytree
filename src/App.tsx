@@ -71,9 +71,9 @@ export default function App() {
       if (k === 'k') {
         e.preventDefault();
         handleMenu('search');
-      } else if (/^[1-6]$/.test(k) && !platform.isTauri()) {
+      } else if (/^[1-7]$/.test(k) && !platform.isTauri()) {
         e.preventDefault();
-        go((['home', 'tree', 'people', 'sources', 'media', 'research'] as const)[+k - 1]);
+        go((['wall', 'home', 'tree', 'people', 'sources', 'media', 'research'] as const)[+k - 1]);
       }
     };
     window.addEventListener('keydown', onKey);
