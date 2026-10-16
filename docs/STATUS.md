@@ -1,6 +1,6 @@
 # Build status
 
-Updated 15 Oct 2026 (v0.6.0).
+Updated 16 Oct 2026 (v0.7.0).
 
 ## Done
 
@@ -42,9 +42,16 @@ Updated 15 Oct 2026 (v0.6.0).
 - Casey's decision: gender options are Male and Female only ('U' remains internally for imported records with no sex).
 - Database schema v3.
 
+**Phase 3a: Family Wall**: built (v0.7.0); goes live once Supabase is set up.
+- Supabase schema + RLS in `supabase/migrations/0001_family_wall.sql`; 39 privacy checks in `supabase/tests/run_tests.py` (local PostgreSQL with an auth/storage stand-in). Setup steps in `supabase/README.md`.
+- App: `src/wall/` (types, Supabase backend, demo backend for the sample tree, offline cache + send queue in IndexedDB, store) and `src/features/wall/` (feed, composer, members, moderation, My wall settings, connect, invite and welcome/opt-in windows).
+- Invites are matched on the invitee's confirmed email; the invitation email is sent from the owner's own email program (no server email needed).
+- Approved life events become Probable facts cited to a "Family Wall post" source.
+- Builds read `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` GitHub secrets.
+
 ## Next
 
-Phase 3: Supabase project (Casey to create), online accounts, invites, Family Wall, cross-tree profile linking and merging, online tag approval, moderation, life-event approval, offline post queue, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
+Phase 3 (rest): live test of the wall on Casey's Supabase project, relatives browsing shared parts of the tree, cross-tree profile linking and merging, online tag and story approval, online sync with the conflict screen, cloud backup, `HintProvider` integrations (decision needed: FamilySearch developer key).
 
 ## Decisions still open for Casey
 
