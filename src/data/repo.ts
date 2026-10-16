@@ -156,6 +156,9 @@ export async function loadTree(db: Db): Promise<TreeData> {
         title: s(r.title),
         body: s(r.body),
         date: s(r.date_text),
+        q: (s(r.date_qualifier) || 'exact') as Story['q'],
+        date2: s(r.date2_text),
+        ageAt: n(r.age_at),
         sortYear: n(r.sort_year),
         placeId: s(r.place_id),
         factId: s(r.fact_id),
@@ -280,11 +283,15 @@ export class SqlLog {
   }
   story(x: Story) {
     this.add(
-      `INSERT INTO story (id, title, body, date_text, sort_year, place_id, fact_id, author, author_email, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO story (id, title, body, date_text, sort_year, place_id, fact_id, author, author_email, created_at, updated_at, date_qualifier, date2_text, age_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET title=excluded.title, body=excluded.body, date_text=excluded.date_text, sort_year=excluded.sort_year,
-         place_id=excluded.place_id, fact_id=excluded.fact_id, author=excluded.author, author_email=excluded.author_email, updated_at=excluded.updated_at`,
-      [x.id, x.title, x.body, x.date, x.sortYear, x.placeId || null, x.factId || null, x.author, x.authorEmail, x.createdAt || this.stamp, x.updatedAt || this.stamp],
+         place_id=excluded.place_id, fact_id=excluded.fact_id, author=excluded.author, author_email=excluded.author_email, updated_at=excluded.updated_at,
+         date_qualifier=excluded.date_qualifier, date2_text=excluded.date2_text, age_at=excluded.age_at`,
+      [
+        x.id, x.title, x.body, x.date, x.sortYear, x.placeId || null, x.factId || null, x.author, x.authorEmail, x.createdAt || this.stamp, x.updatedAt || this.stamp,
+        x.q || 'exact', x.date2 || '', x.ageAt ?? null,
+      ],
     );
     this.add('DELETE FROM story_person WHERE story_id = ?', [x.id]);
     this.add('DELETE FROM story_media WHERE story_id = ?', [x.id]);

@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useData } from '../../data/store';
-import { setUi } from '../../data/ui';
+import { setUi, toast } from '../../data/ui';
 import { deleteStory, isMyStory, openMedia, openPerson, openPlace, openProfile, saveStory, setStoryStatus } from '../../data/actions';
 import { treeApi, type TreeApi } from '../../lib/family';
-import { dateLabel } from '../../lib/dates';
+import { QUALIFIERS, dateLabel, yearOf } from '../../lib/dates';
 import { ageBetween } from '../../lib/ages';
-import { storiesAbout, storyPreview, storyYear, timeline } from '../../lib/stories';
-import type { Story } from '../../lib/types';
+import { dateFromAge, storiesAbout, storyPreview, storyWhen, storyYear, timeline } from '../../lib/stories';
+import type { Qualifier, Story } from '../../lib/types';
 import { DateInput } from '../../components/DateInput';
-import { Avatar, Conf, Icon, ModalFrame, PlaceInput } from '../../components/ui';
+import { Avatar, Conf, Icon, ModalFrame, PlaceInput, Seg } from '../../components/ui';
 import { MediaThumb } from '../media/MediaThumb';
 
 const writtenOn = (iso: string) => {
@@ -19,12 +19,22 @@ const writtenOn = (iso: string) => {
 };
 
 /** "aged 34" at the time of a story, worked out from its date or its event. */
+/** The story's date in words; "At 5 years old" names whose age it is when shown on someone else's profile. */
+function whenFor(T: TreeApi, pid: string, s: Story): string {
+  const subject = Object.keys(s.people)[0];
+  if (s.ageAt != null && subject && subject !== pid && T.person[subject]) {
+    const r = storyWhen({ ...s, ageAt: null });
+    return `When ${T.first(subject)} was ${s.ageAt}${r ? ` (${r.charAt(0).toLowerCase()}${r.slice(1)})` : ''}`;
+  }
+  return storyWhen(s);
+}
+
 function storyAge(T: TreeApi, pid: string, s: Story) {
   const birth = T.ff(pid, 'Birth');
   const fact = s.factId ? T.data.facts.find((f) => f.id === s.factId) : undefined;
   const when = s.date || fact?.date || '';
   if (!birth || !when) return '';
-  const a = ageBetween(birth.date, when, birth.q, fact && !s.date ? fact.q : 'exact');
+  const a = ageBetween(birth.date, when, birth.q, fact && !s.date ? fact.q : s.q || 'exact');
   if (!a) return '';
   if (a.years === 0) return a.months !== undefined ? `aged ${a.months} month${a.months === 1 ? '' : 's'}` : 'aged under 1';
   return `aged ${a.approx ? 'about ' : ''}${a.years}`;
@@ -37,8 +47,8 @@ export function StoryCard({ T, pid, s, canManage, compact }: { T: TreeApi; pid: 
   const mine = isMyStory(s);
   const others = Object.keys(s.people).filter((x) => x !== pid && T.person[x] && s.people[x] !== 'hidden');
   const prev = storyPreview(s.body, compact ? 180 : 600);
-  const when = s.date || (fact ? dateLabel(fact) : '');
-  const age = storyAge(T, pid, s);
+  const when = whenFor(T, pid, s) || (fact ? dateLabel(fact) : '');
+  const age = s.ageAt != null ? '' : storyAge(T, pid, s);
   return (
     <article className={'story' + (compact ? ' compact' : '') + (status === 'hidden' ? ' dim' : '')} aria-labelledby={'st-' + s.id}>
       <div className="story-top">
@@ -259,8 +269,8 @@ export function TimelineTab({ T, pid, canManage }: { T: TreeApi; pid: string; ca
             ) : (
               <li key={'s' + it.story.id} className="pf-life-story">
                 <span className="pf-life-date">
-                  {it.story.date || (it.story.factId ? '' : it.year ? String(it.year) : 'Undated')}
-                  {storyAge(T, pid, it.story) && it.story.date && <span className="pf-life-age">{storyAge(T, pid, it.story)}</span>}
+                  {whenFor(T, pid, it.story) || (it.story.factId ? '' : it.year ? String(it.year) : 'Undated')}
+                  {it.story.ageAt == null && storyAge(T, pid, it.story) && it.story.date && <span className="pf-life-age">{storyAge(T, pid, it.story)}</span>}
                 </span>
                 <StoryCard T={T} pid={pid} s={it.story} canManage={canManage} compact />
               </li>
@@ -285,6 +295,10 @@ export function StoryModal({ pid, id, close }: { pid: string; id?: string; close
     title: existing?.title || '',
     body: existing?.body || '',
     date: existing?.date || '',
+    q: (existing?.q || 'exact') as Qualifier,
+    date2: existing?.date2 || '',
+    mode: (existing?.ageAt != null ? 'age' : 'date') as 'date' | 'age',
+    age: existing?.ageAt != null ? String(existing.ageAt) : '',
     place: existing ? T.placeName(existing.placeId) : '',
     factId: existing?.factId || '',
     people: existing ? [pid, ...Object.keys(existing.people).filter((x) => x !== pid)] : [pid],
@@ -293,6 +307,9 @@ export function StoryModal({ pid, id, close }: { pid: string; id?: string; close
   const [busy, setBusy] = useState(false);
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
   const subject = T.person[pid];
+  const birthFact = subject ? T.ff(pid, 'Birth') : undefined;
+  const birthYear = yearOf(birthFact?.date || '');
+  const ageDate = f.mode === 'age' && f.age !== '' ? dateFromAge(birthFact, Number(f.age)) : null;
   if (!subject) return null;
   const facts = T.factsOf(pid);
   const photos = [
@@ -314,16 +331,59 @@ export function StoryModal({ pid, id, close }: { pid: string; id?: string; close
         Title
         <input value={f.title} onChange={(e) => set({ title: e.target.value })} placeholder="e.g. The summer we moved to Cairns" autoFocus />
       </label>
-      <div className="frow">
-        <label className="fl">
-          When
-          <DateInput value={f.date} onChange={(v) => set({ date: v })} placeholder="e.g. 1962 or 14 Mar 1962" label="when it happened" />
-        </label>
-        <label className="fl">
-          Where
-          <PlaceInput value={f.place} onChange={(v) => set({ place: v })} />
-        </label>
-      </div>
+      <fieldset className="when-box">
+        <legend className="fl">When did it happen?</legend>
+        <Seg
+          label="Give a date or an age"
+          value={f.mode}
+          onChange={(m) => set({ mode: m })}
+          options={[
+            ['date', 'A date'],
+            ['age', `${T.first(pid)}’s age at the time`],
+          ]}
+        />
+        {f.mode === 'date' ? (
+          <div className="frow" style={{ gridTemplateColumns: f.q === 'between' ? '150px 1fr 1fr' : '150px 1fr' }}>
+            <label className="fl">
+              Date is
+              <select value={f.q} onChange={(e) => set({ q: e.target.value as Qualifier })}>
+                {QUALIFIERS.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {v === 'exact' ? 'On' : l}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="fl">
+              {f.q === 'between' ? 'From' : 'Date'}
+              <DateInput value={f.date} onChange={(v) => set({ date: v })} placeholder="e.g. 1962, Mar 1962 or 14 Mar 1962" label="when it happened" />
+            </label>
+            {f.q === 'between' && (
+              <label className="fl">
+                To
+                <DateInput value={f.date2} onChange={(v) => set({ date2: v })} placeholder="e.g. 1965" label="the end date" />
+              </label>
+            )}
+          </div>
+        ) : (
+          <div className="row" style={{ alignItems: 'flex-end' }}>
+            <label className="fl" style={{ maxWidth: 220 }}>
+              At
+              <span className="row" style={{ flexWrap: 'nowrap' }}>
+                <input type="number" min={0} max={120} value={f.age} onChange={(e) => set({ age: e.target.value })} aria-label="Age in years" style={{ width: 90 }} />
+                <span>years old</span>
+              </span>
+            </label>
+            <span className="muted" role="status">
+              {ageDate ? `That’s ${storyWhen({ ...ageDate, ageAt: null }).toLowerCase()}.` : birthYear ? '' : `Add a birth year for ${T.first(pid)} first, so the year can be worked out.`}
+            </span>
+          </div>
+        )}
+      </fieldset>
+      <label className="fl">
+        Where
+        <PlaceInput value={f.place} onChange={(v) => set({ place: v })} />
+      </label>
       <label className="fl">
         Is it about one of {T.first(pid)}’s events? <span className="muted">(optional)</span>
         <select
@@ -414,8 +474,13 @@ export function StoryModal({ pid, id, close }: { pid: string; id?: string; close
           className="btn primary"
           disabled={busy}
           onClick={async () => {
+            if (f.mode === 'age' && !ageDate) {
+              toast(birthYear ? 'Enter their age at the time' : `Add a birth year for ${T.first(pid)} first`);
+              return;
+            }
             setBusy(true);
-            const ok = await saveStory({ ...f, id });
+            const when = f.mode === 'age' && ageDate ? { ...ageDate, ageAt: Number(f.age) } : { date: f.date, q: f.q, date2: f.date2, ageAt: null };
+            const ok = await saveStory({ ...f, ...when, id });
             setBusy(false);
             if (ok) close();
           }}

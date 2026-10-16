@@ -323,12 +323,13 @@ export function TreeView() {
                   <Avatar pid={id} />
                   <span className="tc-text">
                     <span className="tc-name">{T.nm(id)}</span>
-                    <span className="tc-years">
-                      {T.years(id)}
-                      {kin.get(id) && kin.get(id)!.kind !== 'self' && <span className="tc-rel" title={kin.get(id)!.title}> · {kin.get(id)!.title}</span>}
-                      {kin.get(id)?.kind === 'self' && anchor.isYou && <span className="tc-rel"> · You</span>}
-                    </span>
+                    <span className="tc-years">{T.years(id)}</span>
                     <span className="tc-badges">
+                      {kin.get(id) && (kin.get(id)!.kind !== 'self' || anchor.isYou) && (
+                        <span className="tc-rel" title={kin.get(id)!.kind === 'self' ? 'You' : kin.get(id)!.title}>
+                          {kin.get(id)!.kind === 'self' ? 'You' : kin.get(id)!.title}
+                        </span>
+                      )}
                       {unv > 0 && <span className="badge unv">? {unv} unverified</span>}
                       {hc > 0 && <span className="badge hint">{hc} hint</span>}
                       {p.living && <span className="badge liv">Living</span>}

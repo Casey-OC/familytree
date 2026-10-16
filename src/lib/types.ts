@@ -227,6 +227,9 @@ export interface Story {
   title: string;
   body: string;
   date: string; // as written, e.g. "Summer 1962" or "1962"
+  q: Qualifier; // exact, about, before, after, between
+  date2: string; // second date for "between"
+  ageAt: number | null; // written as "at 5 years old"; the date is worked out from their birth
   sortYear: number | null;
   placeId: string;
   factId: string; // the event it's about, '' if none

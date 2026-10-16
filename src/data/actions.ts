@@ -819,6 +819,9 @@ export interface StoryDraft {
   title: string;
   body: string;
   date: string;
+  q?: Story['q'];
+  date2?: string;
+  ageAt?: number | null; // "at 5 years old": the date is worked out from the first person's birth
   place: string;
   factId: string;
   people: string[]; // the first is the person whose profile it was written on
@@ -843,7 +846,7 @@ export async function saveStory(f: StoryDraft): Promise<string | null> {
     commit((d, sql) => {
       let s = d.stories.find((x) => x.id === id);
       if (!s) {
-        s = { id, title: '', body: '', date: '', sortYear: null, placeId: '', factId: '', author: name, authorEmail: email, people: {}, mediaIds: [], createdAt: now, updatedAt: now };
+        s = { id, title: '', body: '', date: '', q: 'exact', date2: '', ageAt: null, sortYear: null, placeId: '', factId: '', author: name, authorEmail: email, people: {}, mediaIds: [], createdAt: now, updatedAt: now };
         d.stories.push(s);
       }
       const date = normaliseDate(f.date);
@@ -861,6 +864,9 @@ export async function saveStory(f: StoryDraft): Promise<string | null> {
         title: f.title.trim(),
         body: f.body.trim(),
         date,
+        q: f.q || 'exact',
+        date2: f.q === 'between' ? normaliseDate(f.date2 || '') : '',
+        ageAt: f.ageAt ?? null,
         sortYear: yearOf(date) ?? (fact ? yearOf(fact.date) : null),
         placeId: ensurePlace(d, sql, f.place),
         factId: fact ? fact.id : '',

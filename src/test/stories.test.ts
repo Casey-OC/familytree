@@ -37,7 +37,7 @@ describe('ages at events', () => {
 function withStories(): TreeData {
   const d = sampleTree();
   const marriage = d.facts.find((f) => f.personId === 'p12' && f.type === 'Marriage') || d.facts.find((f) => f.personId === 'p12' && f.type === 'Death')!;
-  const base = { body: 'Text', placeId: '', author: 'Casey', authorEmail: 'casey@example.com', mediaIds: [], createdAt: '2026-10-15T00:00:00Z', updatedAt: '2026-10-15T00:00:00Z' };
+  const base = { q: 'exact' as const, date2: '', ageAt: null, body: 'Text', placeId: '', author: 'Casey', authorEmail: 'casey@example.com', mediaIds: [], createdAt: '2026-10-15T00:00:00Z', updatedAt: '2026-10-15T00:00:00Z' };
   const stories: Story[] = [
     { ...base, id: 's1', title: 'Cane season', date: '1935', sortYear: 1935, factId: '', people: { p12: 'shown', p13: 'pending' } },
     { ...base, id: 's2', title: 'About the event', date: '', sortYear: null, factId: marriage.id, people: { p12: 'shown' } },
@@ -95,5 +95,24 @@ describe('life stories in the timeline', () => {
     const r = mergeInto(d, 'p12', 'dup');
     expect(d.stories.find((s) => s.id === 's5')!.people).toEqual({ p12: 'shown' });
     expect(r.changedStories).toContain('s5');
+  });
+});
+
+import { dateFromAge, storyWhen } from '../lib/stories';
+describe('story dates by age and approximate dates', () => {
+  it('works out the year from an age', () => {
+    expect(dateFromAge({ date: '12 Jul 1980', q: 'exact' }, 5)).toEqual({ date: '1985', q: 'between', date2: '1986' });
+    expect(dateFromAge({ date: '1 Jan 1980', q: 'exact' }, 5)).toEqual({ date: '1985', q: 'exact', date2: '' });
+    expect(dateFromAge({ date: '1980', q: 'exact' }, 5)).toEqual({ date: '1985', q: 'about', date2: '' });
+    expect(dateFromAge({ date: '12 Jul 1980', q: 'about' }, 30)).toEqual({ date: '2010', q: 'about', date2: '' });
+    expect(dateFromAge(undefined, 5)).toBeNull();
+  });
+  it('describes story dates in plain words', () => {
+    expect(storyWhen({ date: '1985', q: 'between', date2: '1986', ageAt: 5 })).toBe('At 5 years old (1985–1986)');
+    expect(storyWhen({ date: '1985', q: 'about', date2: '', ageAt: 1 })).toBe('At 1 year old (about 1985)');
+    expect(storyWhen({ date: '1962', q: 'about', date2: '', ageAt: null })).toBe('About 1962');
+    expect(storyWhen({ date: '1962', q: 'before', date2: '', ageAt: null })).toBe('Before 1962');
+    expect(storyWhen({ date: 'Mar 1962', q: 'between', date2: 'Jun 1962', ageAt: null })).toBe('Between Mar 1962 and Jun 1962');
+    expect(storyWhen({ date: '14 Mar 1962', q: 'exact', date2: '', ageAt: null })).toBe('14 Mar 1962');
   });
 });
