@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { WallPage } from './wall/WallPage';
+import { useWall } from '../wall/store';
 import { ProfilePage } from './profile/ProfilePage';
 import { useData, openTree } from '../data/store';
 import { setUi, useUi, type Section } from '../data/ui';
@@ -13,7 +15,6 @@ import { Sources } from './Sources';
 import { MediaPage } from './media/MediaPage';
 import { Research } from './Research';
 import { Settings } from './settings/Settings';
-import { ComingSoon } from './ComingSoon';
 import { Charts } from './charts/Charts';
 import { MapView } from './map/MapView';
 import { DetailPanel } from './panel/DetailPanel';
@@ -41,6 +42,7 @@ export function Shell() {
   const data = useData((s) => s.data);
   const T = treeApi(data);
   const pendingHints = data.hints.filter((h) => h.status === 'pending').length;
+  const wallBadge = useWall((w) => (w.walls.find((x) => x.treeId === w.wallId)?.isOwner ? w.posts.filter((p) => p.lifeStatus === 'pending' && !p.removed).length : 0) + w.invites.length);
 
   return (
     <>
@@ -61,6 +63,7 @@ export function Shell() {
               <Icon name={ic} />
               {l}
               {k === 'research' && pendingHints > 0 && <span className="nb">{pendingHints}</span>}
+              {k === 'wall' && wallBadge > 0 && <span className="nb" aria-label={`${wallBadge} waiting`}>{wallBadge}</span>}
             </button>
           ))}
           <div className="side-foot">
@@ -75,19 +78,7 @@ export function Shell() {
           {section === 'home' && <Home />}
           {section === 'tree' && <TreeView />}
           {section === 'people' && <People />}
-          {section === 'wall' && (
-            <ComingSoon
-              title="Family Wall"
-              phase="Phase 3"
-              lede="A private, Facebook-style space for invited living relatives. Nothing here is ever public."
-              items={[
-                'Invite living relatives by email; they choose exactly what they share',
-                'Status updates, photos and life events, with comments and reactions',
-                'Life events can be approved straight into the tree, cited to the post',
-                'Works offline: new posts wait and send when you reconnect',
-              ]}
-            />
-          )}
+          {section === 'wall' && <WallPage />}
           {section === 'sources' && <Sources />}
           {section === 'media' && <MediaPage />}
           {section === 'map' && <MapView />}

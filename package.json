@@ -1,7 +1,7 @@
 {
   "name": "familytree",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "5.2.6",
     "@fontsource/literata": "5.2.8",
+    "@supabase/supabase-js": "2.118.0",
     "@tauri-apps/api": "2.12.4",
     "@tauri-apps/plugin-dialog": "2.8.3",
     "@tauri-apps/plugin-opener": "2.7.2",

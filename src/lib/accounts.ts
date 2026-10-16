@@ -13,6 +13,7 @@ export interface Account {
   treeId: string; // your own tree
   lastTree: string;
   keepSignedIn: boolean;
+  wallConnected?: boolean; // signed in to the online Family Wall with the same email and password
   createdAt: string;
 }
 

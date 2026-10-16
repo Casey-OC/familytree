@@ -7,3 +7,5 @@ src-tauri/gen/schemas
 .vite
 coverage
 *.tsbuildinfo
+.env.local
+.env.*.local
