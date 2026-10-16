@@ -278,5 +278,8 @@ fieldset.parentrow legend { font-weight: 700; padding: 0 6px; color: var(--muted
 
 /* ---------- family titles ---------- */
 .tc-years { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.tc-rel { color: var(--gold-text); font-weight: 700; }
+.tc-rel { color: var(--gold-text); font-weight: 700; font-size: 15px; line-height: 20px; flex: 0 0 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tc-badges { flex-wrap: nowrap !important; overflow: hidden; }
 .kin-line { font-weight: 700; color: var(--gold-text); }
+.when-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 14px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.when-box legend { padding: 0 6px; }

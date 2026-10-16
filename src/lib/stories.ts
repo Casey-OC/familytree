@@ -1,8 +1,8 @@
 // Life stories: stories written about someone, placed in their timeline.
 
 import type { TreeApi } from './family';
-import { yearOf } from './dates';
-import type { Fact, Story, TagStatus, TreeData } from './types';
+import { fullDate, yearOf } from './dates';
+import type { Fact, Qualifier, Story, TagStatus, TreeData } from './types';
 
 /** The year a story sits at in a timeline: its own date, else the event it's about. */
 export function storyYear(d: TreeData, s: Story): number | null {
@@ -69,4 +69,39 @@ export function storyPreview(body: string, max = 260): { text: string; more: boo
   const cut = t.slice(0, max);
   const sp = cut.lastIndexOf(' ');
   return { text: (sp > max * 0.6 ? cut.slice(0, sp) : cut).trimEnd() + '…', more: true };
+}
+
+/**
+ * The date of a story written as "at 5 years old", from the person's birth.
+ * A year of age usually spans two calendar years, so with a full birth date it's a range (1985–1986);
+ * with only a birth year it's "about".
+ */
+export function dateFromAge(birth: { date: string; q: Qualifier } | undefined, age: number): { date: string; q: Qualifier; date2: string } | null {
+  const by = yearOf(birth?.date || '');
+  if (!birth || !by || !(age >= 0) || age > 130) return null;
+  const year = by + Math.floor(age);
+  const full = fullDate(birth.date);
+  if (full && birth.q === 'exact') {
+    if (full.month === 0 && full.day === 1) return { date: String(year), q: 'exact', date2: '' };
+    return { date: String(year), q: 'between', date2: String(year + 1) };
+  }
+  return { date: String(year), q: 'about', date2: '' };
+}
+
+/** "About 1962", "Between 1985 and 1986", "At 5 years old (1985–1986)". */
+export function storyWhen(s: Pick<Story, 'date' | 'q' | 'date2' | 'ageAt'>): string {
+  const range = () => {
+    if (!s.date) return '';
+    if (s.q === 'between') return /^\d{4}$/.test(s.date) && /^\d{4}$/.test(s.date2) ? `${s.date}–${s.date2}` : `between ${s.date} and ${s.date2 || '?'}`;
+    if (s.q === 'about') return `about ${s.date}`;
+    if (s.q === 'before') return `before ${s.date}`;
+    if (s.q === 'after') return `after ${s.date}`;
+    return s.date;
+  };
+  if (s.ageAt !== null && s.ageAt !== undefined) {
+    const r = range();
+    return `At ${s.ageAt} year${s.ageAt === 1 ? '' : 's'} old${r ? ` (${r})` : ''}`;
+  }
+  const r = range();
+  return r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
 }

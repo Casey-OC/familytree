@@ -175,6 +175,12 @@ export const MIGRATIONS: string[] = [
     PRIMARY KEY (story_id, media_id)
   );
   `,
+  // v4 — approximate story dates, and stories dated by age ("at 5 years old")
+  `
+  ALTER TABLE story ADD COLUMN date_qualifier TEXT NOT NULL DEFAULT 'exact';
+  ALTER TABLE story ADD COLUMN date2_text TEXT NOT NULL DEFAULT '';
+  ALTER TABLE story ADD COLUMN age_at INTEGER;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
