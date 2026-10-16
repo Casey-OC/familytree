@@ -38,7 +38,7 @@ export async function continueStartup(withKey = false) {
   const target = mine.find((t) => t.id === account.lastTree) || mine.find((t) => t.id === account.treeId) || mine[0];
   try {
     await openTree(target.id);
-    setUi({ screen: 'app', section: 'home' });
+    setUi({ screen: 'app', section: 'wall' });
     return;
   } catch (e) {
     const msg = String((e as Error)?.message || e);

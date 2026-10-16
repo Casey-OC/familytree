@@ -78,8 +78,8 @@ export function WallPage() {
       <div className="page">
         <div className="page-head">
           <div>
-            <h1 className="h1">Family Wall</h1>
-            <p className="lede">A private space for invited living relatives. Nothing here is ever public.</p>
+            <h1 className="h1">Home</h1>
+            <p className="lede">Your Family Wall — a private space for invited living relatives. Nothing here is ever public.</p>
           </div>
           <div className="spacer" />
           {mode === 'ready' && <HeadActions />}
@@ -104,19 +104,43 @@ export function WallPage() {
 
 function WallOff() {
   const prefs = useData((s) => s.prefs);
+  const name = useData((s) => s.account?.name || '');
+  const data = useData((s) => s.data);
   const sample = prefs.trees.find((t) => t.sample);
+  const self = data.settings.self_person;
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 720 }}>
-      <h2 className="h2">The Family Wall isn’t switched on in this version yet</h2>
-      <p style={{ margin: 0 }}>
-        The wall keeps posts, photos and members online so your relatives can see them on their own computers. It switches on when the app is connected to the online service.
-      </p>
-      <p className="muted" style={{ margin: 0 }}>
-        Your tree, profiles and stories all keep working on this computer in the meantime.
-      </p>
-      <div className="row">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 860 }}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h2 className="h2">Welcome{name ? `, ${name}` : ''}</h2>
+        <p style={{ margin: 0 }}>
+          This is where your Family Wall lives: news, photos and life events from invited relatives. It switches on when the app is connected to the online service. Your
+          tree, profiles, stories and recipes all work on this computer in the meantime.
+        </p>
+        <div className="row">
+          <button className="btn primary" onClick={() => setUi({ section: 'tree' })}>
+            <Icon name="tree" sm />
+            Open my tree
+          </button>
+          {self && data.people.some((p) => p.id === self) && (
+            <button className="btn" onClick={() => openProfile(self)}>
+              <Icon name="people" sm />
+              My profile
+            </button>
+          )}
+          <button className="btn" onClick={() => setUi({ section: 'home' })}>
+            <Icon name="charts" sm />
+            Overview
+          </button>
+        </div>
+      </div>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h2 className="h3">See what the Family Wall will look like</h2>
+        <p className="muted" style={{ margin: 0 }}>
+          The sample tree has a demo wall with posts, comments, life events and members you can try.
+        </p>
         <button
-          className="btn primary"
+          className="btn"
+          style={{ alignSelf: 'flex-start' }}
           onClick={async () => {
             const { openSample } = await import('../FirstRun');
             await openSample();

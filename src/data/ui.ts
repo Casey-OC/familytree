@@ -93,12 +93,12 @@ export interface UiState {
 
 export const initialUi = (): UiState => ({
   screen: 'loading',
-  section: 'home',
+  section: 'wall',
   profilePid: '',
   profileTab: 'overview',
   wtab: 'feed',
   wfilter: 'all',
-  profileBack: 'home',
+  profileBack: 'wall',
   panel: null,
   pinned: false,
   ptab: 'facts',

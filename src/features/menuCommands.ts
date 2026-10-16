@@ -39,6 +39,11 @@ export async function handleMenu(id: string) {
       needTree(() => import('./Shell').then((m) => m.focusSearch()));
       break;
     case 'go-home':
+      needTree(() => go('wall'));
+      break;
+    case 'go-overview':
+      needTree(() => go('home'));
+      break;
     case 'go-tree':
     case 'go-people':
     case 'go-sources':
