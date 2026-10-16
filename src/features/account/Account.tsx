@@ -1,6 +1,6 @@
 // Sign up, log in, "About you", signing out, and account settings.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { closeTree, createTree, myTrees, openTree, setPrefs, updateAccount, useData } from '../../data/store';
 import { setUi, toast, useUi } from '../../data/ui';
 import { flushNotes, openPerson } from '../../data/actions';
@@ -85,9 +85,22 @@ export async function startSession() {
   setUi({ screen: 'auth' });
 }
 
+/** If this account was connected to the Family Wall, reconnect quietly with the password just typed. */
+function reconnectWall(acc: Account, password: string) {
+  if (!acc.wallConnected) return;
+  import('../../wall/supabase')
+    .then(async (s) => {
+      if (!s.wallConfigured()) return;
+      const r = await s.connect(acc.id, acc.email, password);
+      if (r.ok) (await import('../../wall/store')).startWall(true);
+    })
+    .catch(() => undefined);
+}
+
 export async function signOut() {
   const { account } = useData.getState();
   await flushNotes();
+  await import('../../wall/store').then((w) => w.disconnectWall()).catch(() => undefined);
   setUi({ panel: null, form: null, modal: null, menu: null });
   await closeTree();
   sessionKey = null;
@@ -178,8 +191,10 @@ export function AuthScreen() {
       if (mode === 'login') {
         const key = acc ? await unwrapKey(acc.keyByPassword, pw) : null;
         if (!acc || !key) return setErr('That email and password don’t match an account on this computer.');
+        const typed = pw;
         setPw('');
         await signIn(acc, key, keep);
+        reconnectWall(acc, typed);
       } else if (mode === 'forgot') {
         if (!acc) return setErr('There’s no account with that email on this computer.');
         const key = await unwrapKey(acc.keyByRecovery, normRecoveryCode(code));
@@ -597,6 +612,10 @@ export function AccountTab() {
           <dd>{new Date(account.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</dd>
           <dt>Kept</dt>
           <dd>On this computer</dd>
+          <dt>Family Wall</dt>
+          <dd>
+            <WallStatus />
+          </dd>
         </dl>
         <div className="toggle">
           <span style={{ flex: 1 }}>
@@ -658,6 +677,10 @@ export function ChangePasswordModal({ close }: { close: () => void }) {
       const key = await unwrapKey(account.keyByPassword, old);
       if (!key) return toast('Your current password isn’t right');
       updateAccount({ keyByPassword: await wrapKey(key, a) });
+      if (account.wallConnected) {
+        const { changeOnlinePassword } = await import('../../wall/supabase');
+        await changeOnlinePassword(account.id, a).catch(() => toast('Your Family Wall password will update next time you connect'));
+      }
       close();
       toast('Password changed');
     } catch (e) {
@@ -696,3 +719,41 @@ export function useIsSelf(pid: string) {
 }
 
 export { useUi };
+
+/** Connected to the online Family Wall, or not — with a way to disconnect. */
+function WallStatus() {
+  const account = useData((s) => s.account);
+  const [mode, setMode] = useState<string>('');
+  useEffect(() => {
+    let on = true;
+    import('../../wall/supabase').then(async (w) => {
+      if (!w.wallConfigured() || !account) return on && setMode('off');
+      const { data } = await w.client(account.id).auth.getSession();
+      if (on) setMode(data.session ? 'on' : 'no');
+    });
+    return () => {
+      on = false;
+    };
+  }, [account]);
+  if (mode === 'off') return <span className="muted">Not available in this version yet</span>;
+  if (mode === 'no') return <span>Not connected — open Family Wall to connect</span>;
+  if (mode === 'on')
+    return (
+      <span className="row" style={{ display: 'inline-flex' }}>
+        ✓ Connected
+        <button
+          className="btn sm ghost"
+          onClick={async () => {
+            const { disconnectWall } = await import('../../wall/store');
+            await disconnectWall();
+            updateAccount({ wallConnected: false });
+            setMode('no');
+            toast('Disconnected from the Family Wall on this computer');
+          }}
+        >
+          Disconnect
+        </button>
+      </span>
+    );
+  return <span className="muted">Checking…</span>;
+}

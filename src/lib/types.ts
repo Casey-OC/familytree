@@ -214,6 +214,7 @@ export const SOURCE_TYPES = [
   'Oral history',
   'Photograph',
   'Personal knowledge',
+  'Family Wall post',
   'Other',
 ];
 

@@ -44,7 +44,10 @@ export type Modal =
   | { kind: 'adjustPhoto'; pid: string }
   | { kind: 'choosePhoto'; pid: string; purpose: 'profile' | 'cover' }
   | { kind: 'merge'; keep: string; other: string }
-  | { kind: 'story'; pid: string; id?: string };
+  | { kind: 'story'; pid: string; id?: string }
+  | { kind: 'wallInvite'; pid?: string }
+  | { kind: 'wallInviteSent'; name: string; email: string; wallName: string }
+  | { kind: 'wallAccept'; invite: import('../wall/types').Invite; preview?: boolean };
 
 export interface UiState {
   screen: Screen;
@@ -82,6 +85,8 @@ export interface UiState {
   centreRequest: { pid: string; n: number } | null;
   profilePid: string;
   profileTab: ProfileTab;
+  wtab: 'feed' | 'members' | 'mod' | 'mine';
+  wfilter: 'all' | 'life' | 'photo' | 'mine';
   profileBack: Section;
 }
 
@@ -90,6 +95,8 @@ export const initialUi = (): UiState => ({
   section: 'home',
   profilePid: '',
   profileTab: 'overview',
+  wtab: 'feed',
+  wfilter: 'all',
   profileBack: 'home',
   panel: null,
   pinned: false,

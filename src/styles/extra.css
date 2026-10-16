@@ -264,3 +264,14 @@ fieldset.parentrow legend { font-weight: 700; padding: 0 6px; color: var(--muted
 @media (max-width: 860px) {
   .pf-life li.pf-life-story { grid-template-columns: 1fr; }
 }
+
+/* ---------- Family Wall ---------- */
+.invite-banner { display: flex; gap: 12px; align-items: center; border: 2px solid var(--gold); background: var(--gold-soft); color: var(--gold-text); }
+.cmp-photo { width: 180px; max-height: 180px; object-fit: cover; border-radius: 10px; }
+.post-img { width: 100%; max-height: 560px; object-fit: contain; border-radius: 12px; background: var(--surface2); }
+.post-photo.nophoto { display: flex; align-items: center; justify-content: center; color: var(--muted); background: var(--surface2); font-weight: 600; }
+.post.queued { border-style: dashed; opacity: 0.85; }
+.comment.queued { opacity: 0.75; }
+.invite-text { white-space: pre-wrap; font-family: inherit; font-size: 15px; background: var(--surface2); border-radius: 10px; padding: 12px 14px; margin: 0; max-height: 260px; overflow: auto; }
+.wallwrap .card.composer textarea { min-height: 90px; }
+@media (max-width: 1000px) { .wallwrap { grid-template-columns: 1fr; } }

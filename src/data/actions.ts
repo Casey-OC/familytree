@@ -7,8 +7,8 @@ import { setUi, toast, ui, type FactForm, type ProfileTab, type Section } from '
 import { newId } from './platform';
 import * as platform from './platform';
 import { treeApi } from '../lib/family';
-import { normaliseDate, todayLabel, yearOf } from '../lib/dates';
-import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Story, TagStatus, Task, TreeData } from '../lib/types';
+import { MONTHS, normaliseDate, todayLabel, yearOf } from '../lib/dates';
+import type { Fact, Hint, Media, Person, PhotoCrop, Place, Relationship, Source, Story, TagStatus, Task, TreeData } from '../lib/types';
 import { HOME_EVENTS } from '../lib/types';
 import { mergeInto, mergeProblem, notDuplicateKey, notDuplicates, type FieldChoice, type MergeResult } from '../lib/merge';
 import type { SqlLog } from './repo';
@@ -903,4 +903,55 @@ export async function setStoryStatus(id: string, pid: string, status: TagStatus)
 export function isMyStory(s: Story) {
   const { email, name } = me();
   return s.authorEmail ? s.authorEmail === email : !s.author || s.author === name;
+}
+
+// ---------- Family Wall ----------
+/**
+ * A life event a member posted on the Family Wall, approved by the owner: added to their person
+ * as a fact, cited (Secondary, so Probable) to the wall post.
+ */
+export async function addFactFromWall(
+  personId: string,
+  life: { type: string; date: string; place: string },
+  body: string,
+  authorName: string,
+  postedAt: string,
+  wallName: string,
+): Promise<boolean> {
+  const { LIFE_TO_FACT } = await import('../wall/types');
+  const type = LIFE_TO_FACT[life.type] || 'Family event';
+  const posted = new Date(postedAt);
+  const postedLabel = isNaN(+posted) ? '' : `${posted.getDate()} ${MONTHS[posted.getMonth()]} ${posted.getFullYear()}`;
+  const ok = await safe(() =>
+    commit((d, sql) => {
+      const title = `Family Wall — ${wallName}`;
+      let src = d.sources.find((s) => s.title === title && s.type === 'Family Wall post');
+      if (!src) {
+        src = { id: newId(), title, type: 'Family Wall post', repo: 'Family Wall (online)', url: '' };
+        d.sources.push(src);
+        sql.source(src as Source);
+      }
+      const cite = { id: newId(), sourceId: src.id, page: `Post by ${authorName}${postedLabel ? ', ' + postedLabel : ''}`, accessed: postedLabel, quality: 'Secondary' as const, extract: body.slice(0, 2000) };
+      d.cites.push(cite);
+      sql.cite(cite);
+      const date = normaliseDate(life.date || '');
+      const fact: Fact = {
+        id: newId(),
+        personId,
+        type,
+        q: 'exact',
+        date,
+        date2: '',
+        sortYear: yearOf(date),
+        placeId: ensurePlace(d, sql, life.place || ''),
+        homePlaceId: '',
+        desc: type === life.type ? body.slice(0, 120) : `${life.type}${body ? ': ' + body.slice(0, 100) + (body.length > 100 ? '…' : '') : ''}`,
+        conf: 'auto',
+        citeIds: [cite.id],
+      };
+      d.facts.push(fact);
+      sql.fact(fact);
+    }),
+  );
+  return ok;
 }
